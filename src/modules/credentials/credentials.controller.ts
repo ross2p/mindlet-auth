@@ -1,5 +1,11 @@
-import { ResponseMessage } from '@ross2p/common';
-import { LoginDto, UserTokensDto } from '@ross2p/types';
+import { ResponseMessage, ValidationPipe } from '@ross2p/common';
+import {
+  CreateUserDto,
+  LoginDto,
+  UserTokensDto,
+  createUserSchema,
+  loginSchema,
+} from '@ross2p/types';
 import { Body, Controller, Post } from '@nestjs/common';
 import { CredentialsService } from './credentials.service';
 
@@ -9,13 +15,17 @@ export class CredentialsController {
 
   @Post('login')
   @ResponseMessage('Login successful')
-  public async login(@Body() loginDto: LoginDto): Promise<UserTokensDto> {
-    return this.credentialsService.login(loginDto);
+  public async login(
+    @Body(new ValidationPipe(loginSchema)) loginDto: LoginDto,
+  ): Promise<UserTokensDto> {
+    return this.credentialsService.emailLogin(loginDto);
   }
 
   @Post('register')
   @ResponseMessage('Registration successful')
-  public async register(@Body() loginDto: LoginDto): Promise<UserTokensDto> {
-    return this.credentialsService.register(loginDto);
+  public async register(
+    @Body(new ValidationPipe(createUserSchema)) registerDto: CreateUserDto,
+  ): Promise<UserTokensDto> {
+    return this.credentialsService.emailRegister(registerDto);
   }
 }

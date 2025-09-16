@@ -1,18 +1,14 @@
-import { AuthModule } from './auth.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import {
-  createClientConfig,
-  MicroServiceApplicationConfig,
-  Services,
-} from '@ross2p/messages';
+import { MicroServiceApplicationConfig } from '@ross2p/common';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app =
     await MicroServiceApplicationConfig.create<NestExpressApplication>(
-      AuthModule,
+      AppModule,
     );
 
-  app.init(Services.AUTH);
+  app.init();
   await app.start();
 }
 void bootstrap();
