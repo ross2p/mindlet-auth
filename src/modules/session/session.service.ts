@@ -3,7 +3,6 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
 import { SessionRepository } from './session.repository';
 import { PageRequestSessionDto } from './dto/page-request-session.dto';
-import { last } from 'rxjs';
 
 @Injectable()
 export class SessionService {

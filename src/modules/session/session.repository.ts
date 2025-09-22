@@ -39,9 +39,9 @@ export class SessionRepository {
     pageRequestSessionDto: PageRequestSessionDto,
   ) {
     return this.sessionRepository.findMany({
-      where: { userId: pageRequestSessionDto.userId },
+      where: pageRequestSessionDto.buildWhereFilter(),
       skip: pageRequestSessionDto.skip,
-      take: pageRequestSessionDto.pageSize, // todo: change to take
+      take: pageRequestSessionDto.take,
     });
   }
 
@@ -49,7 +49,7 @@ export class SessionRepository {
     pageRequestSessionDto: PageRequestSessionDto,
   ) {
     return this.sessionRepository.count({
-      where: { userId: pageRequestSessionDto.userId },
+      where: pageRequestSessionDto.buildWhereFilter(),
     });
   }
 }
