@@ -1,15 +1,17 @@
-import { Controller, ValidationPipe } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { UserValidatorService } from './user-validator.service';
-import { AccessTokenDto } from '@ross2p/types';
+import { AccessTokenDto, accessTokenSchema } from '@ross2p/types';
 import { MessagePattern } from '@nestjs/microservices';
-import { AuthCommand, DataPayload } from '@ross2p/common';
+import { AuthCommand, DataPayload, ValidationPipe } from '@ross2p/common';
 
 @Controller()
 export class UserValidatorController {
   constructor(private readonly userValidatorService: UserValidatorService) {}
 
   @MessagePattern(AuthCommand.USER_VALIDATE)
-  async validateUserByToken(@DataPayload() data: AccessTokenDto) {
+  async validateUserByToken(
+    @DataPayload(new ValidationPipe(accessTokenSchema)) data: AccessTokenDto,
+  ) {
     return this.userValidatorService.validateUserByToken(data.accessToken);
   }
 }

@@ -25,7 +25,7 @@ export class UserValidatorService {
       UserEntity,
       { userId: string }
     >('user.getById', {
-      userId: userPayload.userId,
+      userId: userPayload.id,
     });
     return user;
   }
