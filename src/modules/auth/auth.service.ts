@@ -26,17 +26,16 @@ export class AuthService implements OnModuleInit {
   }
 
   async refreshAccessToken(refreshTokenDto: RefreshTokenDto) {
-    const accessTokenDto =
-      await this.tokenService.firstValueFrom<AccessTokenDto>(
-        'token.user.access',
-        { refreshToken: refreshTokenDto.refreshToken },
-      );
+    const accessTokenDto = await this.tokenService.sendAndReturnPromise<
+      AccessTokenDto,
+      { refreshToken: string }
+    >('token.user.access', { refreshToken: refreshTokenDto.refreshToken });
 
     return accessTokenDto;
   }
 
   async generateTokensByUserEntity(user: UserEntity): Promise<UserTokensDto> {
-    const tokens = await this.tokenService.firstValueFrom<
+    const tokens = await this.tokenService.sendAndReturnPromise<
       TokensDto,
       UserEntity
     >('token.user.generate', user);
@@ -47,16 +46,16 @@ export class AuthService implements OnModuleInit {
   }
 
   async generateTokensByUserId(userId: string): Promise<UserTokensDto> {
-    const user = await this.userService.firstValueFrom<UserEntity, string>(
-      'user.getById',
-      userId,
-    );
+    const user = await this.userService.sendAndReturnPromise<
+      UserEntity,
+      string
+    >('user.getById', userId);
     return this.generateTokensByUserEntity(user);
   }
 
   async signIn(userId: string) {
     const refreshTokenDto: RefreshTokenDto =
-      await this.tokenService.firstValueFrom<RefreshTokenDto, string>(
+      await this.tokenService.sendAndReturnPromise<RefreshTokenDto, string>(
         'token.user.refresh',
         userId,
       );
@@ -68,11 +67,10 @@ export class AuthService implements OnModuleInit {
       userAgent: '',
       ipAddress: '',
       expiresAt: new Date(),
-      lastUsedAt: new Date(),
     });
 
     const accessTokenDto: AccessTokenDto =
-      await this.tokenService.firstValueFrom<AccessTokenDto>(
+      await this.tokenService.sendAndReturnPromise<AccessTokenDto>(
         'token.user.access',
         { session },
       );

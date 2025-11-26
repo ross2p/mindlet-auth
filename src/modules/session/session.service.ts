@@ -8,9 +8,12 @@ import { PageRequestSessionDto } from './dto/page-request-session.dto';
 export class SessionService {
   constructor(private readonly sessionRepository: SessionRepository) {}
 
-  createSession(createSessionDto: CreateSessionDto) {
-    createSessionDto.lastUsedAt = new Date();
-    return this.sessionRepository.createSession(createSessionDto);
+  createSession(createSessionDto: Omit<CreateSessionDto, 'lastUsedAt'>) {
+    const sessionData: CreateSessionDto = {
+      ...createSessionDto,
+      lastUsedAt: new Date(),
+    };
+    return this.sessionRepository.createSession(sessionData);
   }
 
   async findSessionsPageByUserId(pageRequestSessionDto: PageRequestSessionDto) {
@@ -25,9 +28,15 @@ export class SessionService {
     return this.sessionRepository.findSessionById(sessionId);
   }
 
-  updateSession(sessionId: string, updateSessionDto: UpdateSessionDto) {
-    updateSessionDto.lastUsedAt = new Date();
-    return this.sessionRepository.updateSession(sessionId, updateSessionDto);
+  updateSession(
+    sessionId: string,
+    updateSessionDto: Omit<UpdateSessionDto, 'lastUsedAt'>,
+  ) {
+    const sessionData: UpdateSessionDto = {
+      ...updateSessionDto,
+      lastUsedAt: new Date(),
+    };
+    return this.sessionRepository.updateSession(sessionId, sessionData);
   }
 
   deleteSession(sessionId: string) {
