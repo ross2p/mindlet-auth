@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@ross2p/database';
-import { AuthModule } from './modules/auth/auth.module';
-import { CredentialsModule } from './modules/credentials/credentials.module';
-import { GoogleModule } from './modules/google/google.module';
-import { UserValidatorModule } from './modules/user-validator/user-validator.module';
-import { SessionModule } from './modules/session/session.module';
+import { AuthModule } from './auth/auth.module';
+import { CredentialsModule } from './credentials/credentials.module';
+import { GoogleModule } from './google/google.module';
+import { UserValidatorModule } from './user-validator/user-validator.module';
+import { SessionModule } from './session/session.module';
 import { RouterModule } from '@nestjs/core';
 
 @Module({
