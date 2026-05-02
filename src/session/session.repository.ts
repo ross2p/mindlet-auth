@@ -9,7 +9,7 @@ export class SessionRepository {
   private readonly sessionRepository: Prisma.SessionDelegate;
 
   constructor(databaseService: DatabaseService) {
-    this.sessionRepository = databaseService.session as Prisma.SessionDelegate;
+    this.sessionRepository = databaseService.client.session as Prisma.SessionDelegate;
   }
 
   public async createSession(data: CreateSessionDto) {
@@ -32,6 +32,12 @@ export class SessionRepository {
   public async findSessionById(sessionId: string) {
     return this.sessionRepository.findUnique({
       where: { id: sessionId },
+    });
+  }
+
+  public async findByRefreshToken(refreshToken: string) {
+    return this.sessionRepository.findFirst({
+      where: { refreshToken },
     });
   }
 

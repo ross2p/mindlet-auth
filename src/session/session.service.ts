@@ -28,6 +28,10 @@ export class SessionService {
     return this.sessionRepository.findSessionById(sessionId);
   }
 
+  findByRefreshToken(refreshToken: string) {
+    return this.sessionRepository.findByRefreshToken(refreshToken);
+  }
+
   updateSession(
     sessionId: string,
     updateSessionDto: Omit<UpdateSessionDto, 'lastUsedAt'>,

@@ -30,18 +30,16 @@ export class CredentialsService implements OnModuleInit {
     await this.userService.connect();
   }
   async emailLogin(loginDto: LoginDto): Promise<UserTokensDto> {
-    const user = await this.userService.firstValueFrom<UserEntity>(
+    const user = await this.userService.sendAndReturnPromise<UserEntity>(
       UserQuery.GET_BY_EMAIL,
-      {
-        email: loginDto.email,
-      },
+      { email: loginDto.email },
     );
 
     if (!user) {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const passwordValid = await this.userService.firstValueFrom<{
+    const passwordValid = await this.userService.sendAndReturnPromise<{
       isPasswordValid: boolean;
     }>('user.password.verify', {
       userId: user.id,
@@ -56,7 +54,7 @@ export class CredentialsService implements OnModuleInit {
   }
 
   async emailRegister(registerDto: CreateUserDto): Promise<UserTokensDto> {
-    const user = await this.userService.firstValueFrom<
+    const user = await this.userService.sendAndReturnPromise<
       UserEntity,
       CreateUserDto
     >(UserCommand.CREATE, registerDto);

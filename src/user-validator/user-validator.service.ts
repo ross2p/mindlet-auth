@@ -1,12 +1,11 @@
 import { UserEntity } from '@ross2p/types';
-import { Inject, Injectable } from '@nestjs/common';
-import { Services, ClientService } from '@ross2p/common';
-import { UserPayload } from '@ross2p/types';
-import { AccessTokenDto } from '@ross2p/types';
-import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Services, ClientService, TokenCommand } from '@ross2p/common';
+import { UserPayload, AccessTokenDto } from '@ross2p/types';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class UserValidatorService {
+export class UserValidatorService implements OnModuleInit {
   constructor(
     @Inject(Services.TOKEN)
     private readonly tokenService: ClientService,
@@ -14,19 +13,27 @@ export class UserValidatorService {
     private readonly userService: ClientService,
   ) {}
 
+  async onModuleInit() {
+    this.tokenService.subscribeToResponseOf(TokenCommand.VALIDATE);
+    this.userService.subscribeToResponseOf('user.findUserById');
+    await this.tokenService.connect();
+    await this.userService.connect();
+  }
+
   async validateUserByToken(token: string): Promise<UserEntity> {
     const userPayload: UserPayload = await firstValueFrom(
-      this.tokenService.send<UserPayload, AccessTokenDto>('token.validate', {
-        accessToken: token,
-      }),
+      this.tokenService.send<UserPayload, AccessTokenDto>(
+        TokenCommand.VALIDATE,
+        { accessToken: token },
+      ),
     );
 
-    const user = await this.userService.firstValueFrom<
-      UserEntity,
-      { userId: string }
-    >('user.getById', {
-      userId: userPayload.id,
-    });
+    const user = await firstValueFrom(
+      this.userService.send<UserEntity, { userId: string }>(
+        'user.findUserById',
+        { userId: userPayload.id },
+      ),
+    );
     return user;
   }
 }

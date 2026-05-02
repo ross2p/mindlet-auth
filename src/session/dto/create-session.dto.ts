@@ -1,9 +1,12 @@
+import { SessionProvider } from '@ross2p/database';
+
 export class CreateSessionDto {
   userId: string;
-  accessToken: string;
   refreshToken: string;
   userAgent: string;
   ipAddress: string;
-  lastUsedAt: Date;
+  provider: SessionProvider;
+  refreshAt: Date;
   expiresAt: Date;
+  lastUsedAt?: Date;
 }
