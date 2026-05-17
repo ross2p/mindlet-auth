@@ -1,8 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { UserValidatorService } from './user-validator.service';
-import { AccessTokenDto, accessTokenSchema } from '@ross2p/types';
 import { MessagePattern } from '@nestjs/microservices';
 import { AuthCommand, DataPayload, ValidationPipe } from '@ross2p/common';
+import { AccessTokenDto } from './access-token.dto';
+import { accessTokenSchema } from './access-token.schema';
 
 @Controller()
 export class UserValidatorController {

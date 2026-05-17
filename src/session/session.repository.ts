@@ -1,61 +1,83 @@
-import { DatabaseService, Prisma, SessionEntity } from '@ross2p/database';
 import { Injectable } from '@nestjs/common';
-import { CreateSessionDto } from './dto/create-session.dto';
-import { UpdateSessionDto } from './dto/update-session.dto';
+import { DatabaseService } from '../database/database.service';
+import type { Session } from '.prisma/client-auth';
 import { PageRequestSessionDto } from './dto/page-request-session.dto';
+import { UpdateSessionRecordDto } from './dto/update-session-record.dto';
+import { BulkUpdateSessionsDto } from './dto/bulk-update-sessions.dto';
+import { CreateSessionDto } from './dto/create-session.dto';
 
 @Injectable()
 export class SessionRepository {
-  private readonly sessionRepository: Prisma.SessionDelegate;
+  constructor(private readonly db: DatabaseService) {}
 
-  constructor(databaseService: DatabaseService) {
-    this.sessionRepository = databaseService.client.session as Prisma.SessionDelegate;
+  public async createSession(data: CreateSessionDto): Promise<Session> {
+    return this.db.session.create({ data });
   }
 
-  public async createSession(data: CreateSessionDto) {
-    return this.sessionRepository.create({ data });
-  }
-
-  public async updateSession(sessionId: string, data: UpdateSessionDto) {
-    return this.sessionRepository.update({
+  public async updateSession(
+    sessionId: string,
+    data: UpdateSessionRecordDto,
+  ): Promise<Session> {
+    return this.db.session.update({
       where: { id: sessionId },
       data,
     });
   }
 
-  public async deleteSession(sessionId: string) {
-    return this.sessionRepository.delete({
-      where: { id: sessionId },
+  public async findSessionById(sessionId: string): Promise<Session | null> {
+    return this.db.session.findUnique({ where: { id: sessionId } });
+  }
+
+  public async findActiveSessionById(
+    sessionId: string,
+  ): Promise<Session | null> {
+    const now = new Date();
+    return this.db.session.findFirst({
+      where: {
+        id: sessionId,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
     });
   }
 
-  public async findSessionById(sessionId: string) {
-    return this.sessionRepository.findUnique({
-      where: { id: sessionId },
-    });
-  }
-
-  public async findByRefreshToken(refreshToken: string) {
-    return this.sessionRepository.findFirst({
-      where: { refreshToken },
-    });
-  }
-
-  public async findSessionsByUserId(
+  public async findActiveSessionsByUserId(
     pageRequestSessionDto: PageRequestSessionDto,
-  ) {
-    return this.sessionRepository.findMany({
-      where: pageRequestSessionDto.buildWhereFilter(),
+  ): Promise<Session[]> {
+    const now = new Date();
+    return this.db.session.findMany({
+      where: {
+        userId: pageRequestSessionDto.userId,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      orderBy: { lastUsedAt: 'desc' },
       skip: pageRequestSessionDto.skip,
       take: pageRequestSessionDto.take,
     });
   }
 
-  public async countSessionsByUserId(
+  public async countActiveSessionsByUserId(
     pageRequestSessionDto: PageRequestSessionDto,
-  ) {
-    return this.sessionRepository.count({
-      where: pageRequestSessionDto.buildWhereFilter(),
+  ): Promise<number> {
+    const now = new Date();
+    return this.db.session.count({
+      where: {
+        userId: pageRequestSessionDto.userId,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
     });
+  }
+
+  public async bulkUpdateSessionsByUserId(
+    userId: string,
+    data: BulkUpdateSessionsDto,
+  ): Promise<number> {
+    const res = await this.db.session.updateMany({
+      where: { userId, revokedAt: null },
+      data,
+    });
+    return res.count;
   }
 }

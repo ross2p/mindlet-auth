@@ -1,12 +1,14 @@
-import { SessionProvider } from '@ross2p/database';
+import { SessionProvider } from '../session-provider.enum';
 
 export class CreateSessionDto {
   userId: string;
-  refreshToken: string;
-  userAgent: string;
-  ipAddress: string;
+  userAgent: string | null;
+  ipAddress: string | null;
   provider: SessionProvider;
   refreshAt: Date;
   expiresAt: Date;
   lastUsedAt?: Date;
+  deviceLabel?: string;
+  timezone?: string;
+  twoFactorVerifiedAt?: Date | null;
 }

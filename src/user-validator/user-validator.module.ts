@@ -6,6 +6,7 @@ import { ClientModule, Services } from '@ross2p/common';
 @Module({
   controllers: [UserValidatorController],
   providers: [UserValidatorService],
-  imports: [ClientModule.register(Services.USER, Services.TOKEN)],
+  imports: [ClientModule.register(Services.USER)],
+  exports: [UserValidatorService],
 })
 export class UserValidatorModule {}

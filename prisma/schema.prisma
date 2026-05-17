@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client-auth"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  refreshTokenHash String?
+  provider         SessionProvider
+  userAgent        String?
+  ipAddress        String?
+  deviceLabel      String?
+  timezone         String?
+  refreshAt        DateTime
+  expiresAt        DateTime
+  lastUsedAt       DateTime @default(now())
+  revokedAt        DateTime?
+  revokedReason    String?
+  createdAt        DateTime @default(now())
+  twoFactorVerifiedAt DateTime?
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+enum SessionProvider {
+  CREDENTIALS
+  GOOGLE
+}

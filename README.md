@@ -1,98 +1,105 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Auth service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Authenticates users (email + password, refresh, JWT validation for other services). Owns **`Session`** in Postgres (`DatabaseService`). Redis (`CacheService` via per-module `CacheModule.forFeature(...)`) backs session revocation, user session version (`sess_ver`), email verification codes, login 2FA email codes, and **password-reset opaque tokens**. The user record (email, password hash, **`twoFactorEnabled`**) lives in the [user service](../user/README.md). **JWT issuance, verification, and password-reset tokens** live in-process under [`src/token/`](src/token/) (`UserTokenService`, `PasswordResetTokenService`).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+**Status:** **implemented** (core flows) — DatabaseService (Prisma), per-module CacheService, session CRUD, refresh with `sid`/`sessionId`/`sv` claims, email 2FA + email verification via Redis + notification, password reset via Redis-backed tokens. Google OAuth remains scaffold-only.
 
-## Description
+## How to run
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Prerequisites
 
-## Project setup
+- Node.js and npm (aligned with the versions used in this repo).
+- **PostgreSQL**, **Redis**, and **Kafka** reachable from your machine. The monorepo root [`docker-compose.yml`](../../docker-compose.yml) defines `postgres`, `redis`, `zookeeper`, and `kafka` you can start as dependencies.
 
-```bash
-$ npm install
-```
+### Environment
 
-## Compile and run the project
+From this directory (`apps/auth`):
+
+1. Copy `.env.example` to `.env`.
+2. Set `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, and `TWO_FACTOR_ENCRYPTION_KEY` (see [docs/configuration.md](docs/configuration.md)).
+3. Fill shared variables validated by `@ross2p/common`: `BASE_URL`, `KAFKA_BROKER`, `SWAGGER_USER`, `SWAGGER_PASSWORD`, `SENTRY_DSN`. Set `SERVICE_NAME=AUTH_SERVICE` so the Kafka client identifies this process as the auth service.
+4. Optionally set `PORT` (defaults to **3000** if unset). If `kafka-ui` from Compose is bound to host port **3000**, pick another port (for example `PORT=3002`) to avoid a clash.
+
+When infrastructure runs via Docker Compose on **localhost**, typical values are:
+
+- `DATABASE_URL=postgresql://mindlet:mindlet@localhost:5432/mindlet` (adjust user/password/db if you changed Compose env defaults).
+- `REDIS_URL=redis://localhost:6379`
+- `KAFKA_BROKER=localhost:9092`
+- `BASE_URL=http://localhost:<PORT>` — use the same host/port as `PORT`.
+
+### Database (Prisma)
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cd apps/auth
+npm install
+npm run prisma:generate
+npm run prisma:migrate:dev
 ```
 
-## Run tests
+Run these from the **`mindlet-api/apps/auth`** directory after `DATABASE_URL` is set.
+
+### Local development (Nest)
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cd apps/auth
+npm run start:dev
 ```
 
-## Deployment
+Other scripts: `npm run start` (no watch), `npm run start:debug`, production `npm run build` then `npm run start:prod`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Docker (auth container only)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+From the **`mindlet-api`** directory (where `docker-compose.yml` lives):
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose up --build auth
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The service is published on host port **3002** (container listens on **3000**). Compose starts Kafka, Postgres, and Redis as dependencies of `auth`.
 
-## Resources
+### Dependencies only (Nest on host, infra in Docker)
 
-Check out a few resources that may come in handy when working with NestJS:
+From **`mindlet-api`**:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+docker compose up -d zookeeper kafka postgres redis
+```
 
-## Support
+Then run `npm run start:dev` in `apps/auth` with the localhost URLs above.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Architecture conventions
 
-## Stay in touch
+- `DatabaseService` and `CacheService` are injected **only into `*.repository.ts`** files — never into services (enforced by `repository-only-data-access` Cursor rule).
+- Every HTTP endpoint has `@ResponseMessage('…')` (enforced by `response-message-on-endpoints` Cursor rule).
+- Use `@ClientInfo()` for IP/UA extraction, `@IsPublic()` for public endpoints, `checkExists(...)` for null guards — all from `@ross2p/common` (enforced by `use-common-helpers` Cursor rule).
+- TTL constants live in `*.constants.ts` files within each module — not in env vars.
+- Domain events are emitted inline via `ClientService.emitEvent(AuthEvent.X, payload)` — no wrapper `EventsService`. Auth sends no emails.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Documentation map
 
-## License
+| Topic | File |
+|-------|------|
+| Entities & ER diagram | [docs/entities.md](docs/entities.md) |
+| Product requirements | [docs/product-requirements.md](docs/product-requirements.md) |
+| Business logic | [docs/business-logic.md](docs/business-logic.md) |
+| HTTP API | [docs/api.md](docs/api.md) |
+| Kafka messaging | [docs/messaging.md](docs/messaging.md) |
+| Architecture | [docs/architecture.md](docs/architecture.md) |
+| Datastores | [docs/datastores.md](docs/datastores.md) |
+| Dependencies | [docs/dependencies.md](docs/dependencies.md) |
+| Configuration | [docs/configuration.md](docs/configuration.md) |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Canonical references
+
+- Cross-service catalog: `mindlet-api/docs/services.md`
+- Domain model: [../../../docs/02-domain-model.md](../../../docs/02-domain-model.md)
+- Roles & permissions: [../../../docs/03-roles-and-permissions.md](../../../docs/03-roles-and-permissions.md)
+- Kafka events catalog: [../../docs/kafka-events.md](../../docs/kafka-events.md)
+- Product feature(s): [01-auth.md](../../../docs/features/01-auth.md)
+
+## Implementation pointers
+
+- **DatabaseService:** `database/database.service.ts` extends `PrismaClient` from `.prisma/client-auth`.
+- **Prisma schema:** [`prisma/schema.prisma`](prisma/schema.prisma) — `Session.id` uses `@default(uuid())` (DB-generated).
+- **Token payloads:** include both `sid` (JWT compat) and `sessionId` (application code). `UserValidatorService` augments `request.user` with `sessionId` + `sessionVersion` after token validation.
+- **Cursor rules:** `.cursor/rules/` — `repository-only-data-access.mdc`, `response-message-on-endpoints.mdc`, `use-common-helpers.mdc`.

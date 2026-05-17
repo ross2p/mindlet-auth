@@ -4,6 +4,6 @@ import { GoogleService } from './google.service';
 
 @Module({
   controllers: [GoogleController],
-  providers: [GoogleService]
+  providers: [GoogleService],
 })
 export class GoogleModule {}

@@ -1,0 +1,68 @@
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { TwoFactorService } from './two-factor.service';
+import {
+  AuthGuard,
+  AuthenticatedUser,
+  CurrentSessionId,
+  ResponseMessage,
+  UserDetails,
+  ValidationPipe,
+} from '@ross2p/common';
+import { TokenPayloadDto } from '@ross2p/types';
+import { Throttle } from '@nestjs/throttler';
+import { VerifyTwoFactorCodeDto } from './dto/verify-two-factor-code.dto';
+import { verifyTwoFactorCodeSchema } from './dto/verify-two-factor-code.schema';
+
+@ApiTags('Two-factor authentication')
+@ApiBearerAuth()
+@Controller('2fa')
+export class TwoFactorController {
+  constructor(private readonly twoFactorService: TwoFactorService) {}
+
+  @Post('resend-code')
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @ResponseMessage('Two-factor code sent')
+  @ApiOperation({
+    summary: 'Resend login two-factor email code',
+    description:
+      'Requires a valid access token (e.g. short-lived token after password login).',
+  })
+  @ApiResponse({ status: 200, description: 'Email dispatched' })
+  resendCode(@CurrentSessionId() sessionId: string): Promise<void> {
+    return this.twoFactorService.sendCode({ sessionId });
+  }
+
+  @Post('verify')
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @ResponseMessage('2FA verified')
+  @ApiOperation({
+    summary: 'Verify login two-factor with email code',
+    description:
+      'Returns a new access token payload (same shape as POST /auth/refresh).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'New access JWT issued',
+    type: TokenPayloadDto,
+  })
+  verify(
+    @UserDetails() user: AuthenticatedUser,
+    @CurrentSessionId() sessionId: string,
+    @Body(new ValidationPipe(verifyTwoFactorCodeSchema))
+    body: VerifyTwoFactorCodeDto,
+  ): Promise<TokenPayloadDto> {
+    return this.twoFactorService.checkCode({
+      userId: user.id,
+      sessionId,
+      code: body.code,
+    });
+  }
+}
