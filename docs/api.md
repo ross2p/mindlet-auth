@@ -10,7 +10,7 @@ HTTP routes are mounted under **`/api/v1/auth`** (global prefix `/api` + URI ver
 |--------|------|---------|------|--------|
 | `POST` | `/api/v1/auth/credentials/login` | [`CredentialsController.login`](../src/credentials/credentials.controller.ts) | Public + throttle | **Implemented** — returns `UserTokensDto` (`is2faEnabled`, short access TTL when verification pending) |
 | `POST` | `/api/v1/auth/credentials/register` | [`CredentialsController.register`](../src/credentials/credentials.controller.ts) | Public + throttle | **Implemented** — returns `UserTokensDto`; sends 6-digit email code; emits `SESSION_STARTED` |
-| `POST` | `/api/v1/auth/refresh` | [`AuthController.refreshAccessToken`](../src/auth/auth.controller.ts) | Public | **Implemented** — requires refresh JWT with `sid` |
+| `POST` | `/api/v1/auth/refresh` | [`AuthController.refreshAccessToken`](../src/auth/auth.controller.ts) | Public | **Implemented** — refresh JWT (`id`, `sessionId`, `type`) + DB session + hash check → new access (`TokenPayloadDto`) |
 | `POST` | `/api/v1/auth/session/sign-out` | [`SessionController.signOut`](../src/session/session.controller.ts) | `AuthGuard` | **Implemented** |
 | `POST` | `/api/v1/auth/session/sign-out-all` | [`SessionController.signOutAll`](../src/session/session.controller.ts) | `AuthGuard` | **Implemented** |
 | `GET` | `/api/v1/auth/session` | [`SessionController.listSessions`](../src/session/session.controller.ts) | `AuthGuard` | **Implemented** — `pageNumber`, `pageSize` query |
@@ -25,11 +25,11 @@ HTTP routes are mounted under **`/api/v1/auth`** (global prefix `/api` + URI ver
 
 ## DTOs & validation
 
-Imported from **`@ross2p/types`**: `LoginDto`, `CreateUserDto`, `RefreshTokenDto`, `UserTokensDto`, `TokensDto`, `AccessTokenDto`, `VerifySixDigitCodeDto`, Joi schemas (`loginSchema`, `createUserSchema`, `refreshTokenSchema`, `accessTokenSchema`, `verifySixDigitCodeSchema`). Local [`GenerateTokensDto`](../src/auth/dto/generate-tokens.dto.ts) supports optional `pendingVerification` (short access TTL).
+Imported from **`@ross2p/types`**: `LoginDto`, `CreateUserDto`, `RefreshTokenDto`, `UserTokensDto`, `TokensDto`, `VerifySixDigitCodeDto`, Joi schemas (`loginSchema`, `createUserSchema`, `refreshTokenSchema`, `verifySixDigitCodeSchema`). Local [`GenerateTokensDto`](../src/auth/dto/generate-tokens.dto.ts) supports optional `pendingVerification` (short access TTL). RPC validation for `auth.user.validate` uses local [`accessTokenSchema`](../src/auth/dto/access-token.schema.ts) + [`AccessTokenDto`](../src/auth/dto/access-token.dto.ts).
 
 ## Auth & guards
 
-`AuthGuard` / `OptionalAuthGuard` from `@ross2p/common` call Kafka **`auth.user.validate`**. [`UserValidatorService`](../src/user-validator/user-validator.service.ts) validates the access token, checks Redis session version (`auth:sess:ver:{userId}`) / per-session revocation, then loads `UserEntity`.
+`AuthGuard` / `OptionalAuthGuard` from `@ross2p/common` call Kafka **`auth.user.validate`**. [`AuthService.validateUserByToken`](../src/auth/auth.service.ts) verifies the access JWT, loads the active session from the auth database, checks `session.userId` against the JWT `id`, and returns **`AuthenticatedUser`** (`id`, `email`, `sessionId`, `twoFactorVerifiedAt`, `emailVerifiedAt`).
 
 ## TODO
 

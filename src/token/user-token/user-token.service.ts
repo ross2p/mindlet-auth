@@ -1,4 +1,4 @@
-import { TokensDto, UserPayload } from '@ross2p/types';
+import { RefreshPayload, TokensDto, UserPayload } from '@ross2p/types';
 import { Injectable } from '@nestjs/common';
 import { GenerateTokensDto } from '../../auth/dto/generate-tokens.dto';
 import { UserAccessTokenService } from './user-access-token.service';
@@ -13,23 +13,24 @@ export class UserTokenService {
   ) {}
 
   generateTokens(dto: GenerateTokensDto): TokensDto {
-    const tokenPayload = {
+    const accessPayload = {
       id: dto.id,
       email: dto.email,
       sessionId: dto.sessionId,
       twoFactorVerifiedAt: dto.twoFactorVerifiedAt,
       emailVerifiedAt: dto.emailVerifiedAt ?? null,
     };
+    const refreshPayload = { id: dto.id, sessionId: dto.sessionId };
     const accessSignOptions =
       dto.pendingVerification === true
         ? { expiresIn: ACCESS_PENDING_VERIFICATION_TTL_SECONDS }
         : undefined;
     return {
       accessToken: this.accessTokenService.generateToken(
-        tokenPayload,
+        accessPayload,
         accessSignOptions,
       ),
-      refreshToken: this.refreshTokenService.generateToken(tokenPayload),
+      refreshToken: this.refreshTokenService.generateToken(refreshPayload),
     };
   }
 
@@ -37,7 +38,7 @@ export class UserTokenService {
     return this.accessTokenService.verifyToken(token);
   }
 
-  verifyRefreshToken(refreshToken: string): UserPayload {
+  verifyRefreshToken(refreshToken: string): RefreshPayload {
     return this.refreshTokenService.verifyToken(refreshToken);
   }
 }

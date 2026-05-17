@@ -1,5 +1,10 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ClientService, Services, UserQuery } from '@ross2p/common';
+import {
+  AuthenticatedUser,
+  ClientService,
+  Services,
+  UserQuery,
+} from '@ross2p/common';
 import { TokenPayloadDto, TokensDto } from '@ross2p/types';
 import { SessionService } from '../session/session.service';
 import { UserTokenService } from '../token/user-token/user-token.service';
@@ -15,8 +20,38 @@ export class AuthService {
     private readonly sessionService: SessionService,
   ) {}
 
+  async validateUserByToken(token: string): Promise<AuthenticatedUser> {
+    const userPayload = this.userTokenService.validateAccessToken(token);
+
+    const session = await this.sessionService.findActiveSessionByIdOrThrow(
+      userPayload.sessionId,
+    );
+    if (session.userId !== userPayload.id) {
+      throw new UnauthorizedException(
+        'The access token does not match the user linked to this session. Please sign in again.',
+      );
+    }
+
+    return {
+      id: userPayload.id,
+      email: userPayload.email,
+      sessionId: userPayload.sessionId,
+      twoFactorVerifiedAt: userPayload.twoFactorVerifiedAt,
+      emailVerifiedAt: userPayload.emailVerifiedAt,
+    };
+  }
+
   async refreshAccessToken(dto: RefreshTokenDto): Promise<TokenPayloadDto> {
     const payload = this.userTokenService.verifyRefreshToken(dto.refreshToken);
+
+    const session = await this.sessionService.findActiveSessionByIdOrThrow(
+      payload.sessionId,
+    );
+    if (session.userId !== payload.id) {
+      throw new UnauthorizedException(
+        'The refresh token session does not belong to the signed-in user. Please sign in again.',
+      );
+    }
 
     await this.sessionService.verifyRefreshTokenHash(
       payload.id,

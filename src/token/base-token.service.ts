@@ -1,4 +1,3 @@
-import { TokenPayloadDto } from '@ross2p/types';
 import { BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { JwtSignOptions } from '@nestjs/jwt';
@@ -24,7 +23,7 @@ export abstract class BaseTokenService<T extends Payload> {
   generateToken(
     payload: Omit<T, 'type' | 'iat' | 'exp'>,
     signOptions?: JwtSignOptions,
-  ): TokenPayloadDto {
+  ): { token: string; payload: T; expiresAt: Date } {
     const token = this.jwtService.sign(
       {
         ...payload,
@@ -44,7 +43,7 @@ export abstract class BaseTokenService<T extends Payload> {
     const decoded = rawDecoded as T & { exp: number };
     return {
       token,
-      payload: decoded as unknown as TokenPayloadDto['payload'],
+      payload: decoded,
       expiresAt: new Date(decoded.exp * 1000),
     };
   }

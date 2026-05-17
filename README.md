@@ -1,8 +1,8 @@
 # Auth service
 
-Authenticates users (email + password, refresh, JWT validation for other services). Owns **`Session`** in Postgres (`DatabaseService`). Redis (`CacheService` via per-module `CacheModule.forFeature(...)`) backs session revocation, user session version (`sess_ver`), email verification codes, login 2FA email codes, and **password-reset opaque tokens**. The user record (email, password hash, **`twoFactorEnabled`**) lives in the [user service](../user/README.md). **JWT issuance, verification, and password-reset tokens** live in-process under [`src/token/`](src/token/) (`UserTokenService`, `PasswordResetTokenService`).
+Authenticates users (email + password, refresh, JWT validation for other services). Owns **`Session`** in Postgres (`DatabaseService`). Redis (`CacheService` via per-module `CacheModule.forFeature(...)`) backs email verification codes, login 2FA codes, and **password-reset opaque tokens**. The user record (email, password hash, **`twoFactorEnabled`**) lives in the [user service](../user/README.md). **JWT issuance, verification, and password-reset tokens** live in-process under [`src/token/`](src/token/) (`UserTokenService`, `PasswordResetTokenService`).
 
-**Status:** **implemented** (core flows) — DatabaseService (Prisma), per-module CacheService, session CRUD, refresh with `sid`/`sessionId`/`sv` claims, email 2FA + email verification via Redis + notification, password reset via Redis-backed tokens. Google OAuth remains scaffold-only.
+**Status:** **implemented** (core flows) — DatabaseService (Prisma), per-module CacheService, session CRUD, refresh JWT with minimal claims + DB session binding, email 2FA + email verification via Redis + notification, password reset via Redis-backed tokens. Google OAuth remains scaffold-only.
 
 ## How to run
 
@@ -101,5 +101,5 @@ Then run `npm run start:dev` in `apps/auth` with the localhost URLs above.
 
 - **DatabaseService:** `database/database.service.ts` extends `PrismaClient` from `.prisma/client-auth`.
 - **Prisma schema:** [`prisma/schema.prisma`](prisma/schema.prisma) — `Session.id` uses `@default(uuid())` (DB-generated).
-- **Token payloads:** include both `sid` (JWT compat) and `sessionId` (application code). `UserValidatorService` augments `request.user` with `sessionId` + `sessionVersion` after token validation.
+- **Token payloads:** access tokens carry user + session claims (`id`, `email`, `sessionId`, `twoFactorVerifiedAt`, `emailVerifiedAt`, `type`). Refresh tokens carry only `id`, `sessionId`, and `type`. Other services receive **`AuthenticatedUser`** on `request.user` after `auth.user.validate` (same five business fields as the access payload, post session check).
 - **Cursor rules:** `.cursor/rules/` — `repository-only-data-access.mdc`, `response-message-on-endpoints.mdc`, `use-common-helpers.mdc`.

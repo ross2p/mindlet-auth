@@ -52,7 +52,7 @@ erDiagram
 
 ## Cross-context
 
-- **JWT & password-reset tokens** — issued and verified in-process ([`src/token/`](../src/token/)); JWT payloads carry `sid`, `sessionId`, `sv`, `twoFactorVerifiedAt`, `emailVerifiedAt`, `pendingVerification` (short access TTL when email not verified).
+- **JWT & password-reset tokens** — issued and verified in-process ([`src/token/`](../src/token/)); **access** JWTs carry `id`, `email`, `sessionId`, `twoFactorVerifiedAt`, `emailVerifiedAt`, `type`, and standard `iat`/`exp`. **Refresh** JWTs carry only `id`, `sessionId`, and `type` (`refresh`). Short access TTL applies when `pendingVerification` is set at mint time.
 - **User service** — `user.create`, `user.get_by_email`, `user.password.verify`, `user.get_by_id`, `user.email.mark_verified`, `user.password.update` (password reset from auth).
 - **Notification service** — patterns such as `notification.send-two-factor` and `email.send-mail-confirmation` (fire-and-forget from `auth`).
 

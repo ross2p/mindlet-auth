@@ -15,7 +15,6 @@ src/
 │   ├── token.module.ts
 │   ├── user-token/                 UserTokenService, access/refresh JwtModule
 │   └── password-reset-token/       PasswordResetTokenService + repository (Redis)
-├── auth/                           AuthService — in-proc JWT + session orchestration
 ├── utils/
 │   └── sha256.util.ts              sha256Hex (session refresh-token hash)
 ├── session/
@@ -46,12 +45,8 @@ src/
 │   └── email-verification.constants.ts EMAIL_VERIFICATION_TTL_SECONDS
 ├── auth/
 │   ├── auth.module.ts
-│   ├── auth.controller.ts          POST /refresh (@IsPublic)
-│   └── auth.service.ts             Session + token orchestration
-├── user-validator/
-│   ├── user-validator.module.ts
-│   ├── user-validator.controller.ts
-│   └── user-validator.service.ts   SessionCacheRepository fast-path + user RPC + in-proc JWT verify
+│   ├── auth.controller.ts          POST /refresh (@IsPublic) + Kafka `auth.user.validate`
+│   └── auth.service.ts             Token + session orchestration; `validateUserByToken`
 └── google/                         Scaffold
 ```
 
@@ -63,8 +58,6 @@ flowchart LR
     Services --> SR[SessionRepository]
     Services --> TFR[TwoFactorRepository]
     SR --> DatabaseService
-    SR --> SCR[SessionCacheRepository]
-    SCR --> CacheService
     TFR --> CacheService
 ```
 

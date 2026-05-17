@@ -12,14 +12,16 @@ Run locally: `cd apps/auth && npx prisma migrate deploy` (requires `DATABASE_URL
 
 ## Redis (`CacheService`)
 
-| Key pattern | Purpose |
-|-------------|---------|
-| `auth:sess:revoked:{sessionId}` | Fast-path revoke flag (TTL ≈ max refresh lifetime). |
-| `auth:sess:ver:{userId}` | Monotonic counter; JWT claim `sv` must match when key exists (`SessionCacheRepository`, prefix `auth:sess` + `ver:`). |
-| `auth:password-reset:{opaqueToken}` | Forgot-password flow: maps token → `{ email }` (TTL = `PASSWORD_RESET_TTL_SECONDS`). |
-| `auth:2fa:challenge:{token}` | Login-time 2FA challenge payload (`userId`, `attempts`, `userAgent`, `ipAddress`). |
-| `auth:rl:{route}:{id}` | Optional shared rate-limit buckets (reserved). |
+Per-feature `CacheModule.forFeature({ prefix, defaultTtlSeconds })` namespaces keys. Examples:
+
+| Prefix | Purpose |
+|--------|---------|
+| `auth:2fa:*` | Login-time 2FA: 6-digit code + attempts per `sessionId` (`TwoFactorModule`). |
+| `auth:email-verify:*` | Email verification: 6-digit code per flow (`EmailVerificationModule`). |
+| `auth:password-reset:*` | Opaque forgot-password tokens → email (`TokenModule` / `PasswordResetTokenService`). |
+
+Session lifecycle (active / revoked / refresh hash) is enforced in **Postgres** on the `Session` row — not via a separate Redis session index in the current code.
 
 ## TODO
 
-- None critical — align Redis TTLs for password-reset tokens with `PASSWORD_RESET_TTL_SECONDS` and refresh JWT lifetime (`JWT_REFRESH_EXPIRES_IN`) in all environments.
+- Align Redis TTLs for password-reset tokens with `PASSWORD_RESET_TTL_SECONDS` and refresh JWT lifetime (`JWT_REFRESH_EXPIRES_IN`) in all environments.
