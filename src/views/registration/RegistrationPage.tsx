@@ -1,12 +1,5 @@
-'use client';
+"use client";
 
-import { Registration} from "@widgets/auth";
+import { RegistrationForm } from "@features/registration";
 
-export const RegistrationPage = () => {
-
-  return (
-    <div>
-        <Registration />   
-    </div>
-  );
-};
+export const RegistrationPage = () => <RegistrationForm />;

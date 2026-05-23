@@ -1,12 +1,5 @@
-'use client';
+"use client";
 
-import { Login} from "@widgets/auth";
+import { LoginForm } from "@features/login";
 
-export const LoginPage = () => {
-
-  return (
-    <div>
-        <Login />   
-    </div>
-  );
-};
+export const LoginPage = () => <LoginForm />;

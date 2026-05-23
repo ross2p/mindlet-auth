@@ -1,13 +1,13 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { UnauthorisedRoute } from "@ross2p/shared/components";
 import { RegistrationPage } from "@pages/registration/RegistrationPage";
 
 export const metadata: Metadata = {
-  title: "Registration",
-  description: "Registration page",
+  title: "Create account — Mindlet",
+  description: "Create your Mindlet account",
 };
 
-export default function Registration() {
+export default function RegistrationRoute() {
   return (
     <UnauthorisedRoute>
       <RegistrationPage />
