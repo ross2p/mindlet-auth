@@ -7,8 +7,8 @@ import {
   UserQuery,
 } from '@ross2p/common';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
-import type { ForgotPasswordDto } from './dto/forgot-password.dto';
-import type { ResetPasswordDto } from '@ross2p/types';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { PasswordResetTokenService } from '../token/password-reset-token/password-reset-token.service';
 
 @Injectable()

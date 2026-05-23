@@ -8,8 +8,6 @@ export interface CacheModuleOptions {
   defaultTtlSeconds?: number;
 }
 
-export const CACHE_MODULE_OPTIONS = 'CACHE_MODULE_OPTIONS';
-
 @Injectable()
 export class CacheService implements OnModuleDestroy {
   private readonly logger = new Logger(this.constructor.name);
@@ -83,18 +81,5 @@ export class CacheService implements OnModuleDestroy {
   async delete(k: string): Promise<void> {
     if (!this.redis) return;
     await this.redis.del(this.getKey(k));
-  }
-
-  async getOrSet<T>(
-    k: string,
-    factory: () => Promise<T>,
-    ttlSeconds?: number,
-    schema?: ObjectSchema<T>,
-  ): Promise<T> {
-    const cached = await this.get<T>(k, schema);
-    if (cached !== null) return cached;
-    const value = await factory();
-    await this.set(k, value, ttlSeconds);
-    return value;
   }
 }

@@ -12,12 +12,14 @@ import {
   UserDetails,
   ValidationPipe,
 } from '@ross2p/common';
+import {
+  confirmTwoFactorEnrollmentSchema,
+  disableTwoFactorEnrollmentSchema,
+} from '@ross2p/types';
 import { Throttle } from '@nestjs/throttler';
 import { TwoFactorEnrollmentService } from './two-factor-enrollment.service';
 import { ConfirmTwoFactorEnrollmentDto } from './dto/confirm-two-factor-enrollment.dto';
 import { DisableTwoFactorEnrollmentDto } from './dto/disable-two-factor-enrollment.dto';
-import { confirmTwoFactorEnrollmentSchema } from './schemas/confirm-two-factor-enrollment.schema';
-import { disableTwoFactorEnrollmentSchema } from './schemas/disable-two-factor-enrollment.schema';
 
 @ApiTags('Two-factor authentication')
 @ApiBearerAuth()

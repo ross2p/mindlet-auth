@@ -10,9 +10,9 @@ import {
   UserMessage,
   UserQuery,
 } from '@ross2p/common';
-import { TokenPayloadDto } from '@ross2p/types';
 import { EmailVerificationRepository } from './email-verification.repository';
 import { AuthService } from '../auth/auth.service';
+import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 
 @Injectable()
 export class EmailVerificationService implements OnModuleInit {

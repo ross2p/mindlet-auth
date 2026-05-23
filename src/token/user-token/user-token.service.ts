@@ -1,6 +1,8 @@
-import { RefreshPayload, TokensDto, UserPayload } from '@ross2p/types';
 import { Injectable } from '@nestjs/common';
 import { GenerateTokensDto } from '../../auth/dto/generate-tokens.dto';
+import { RefreshPayloadDto } from '../../auth/dto/refresh-payload.dto';
+import { TokensDto } from '../../auth/dto/tokens.dto';
+import { UserPayloadDto } from '../../auth/dto/user-payload.dto';
 import { UserAccessTokenService } from './user-access-token.service';
 import { UserRefreshTokenService } from './user-refresh-token.service';
 import { ACCESS_PENDING_VERIFICATION_TTL_SECONDS } from '../token.constants';
@@ -34,11 +36,11 @@ export class UserTokenService {
     };
   }
 
-  validateAccessToken(token: string): UserPayload {
+  validateAccessToken(token: string): UserPayloadDto {
     return this.accessTokenService.verifyToken(token);
   }
 
-  verifyRefreshToken(refreshToken: string): RefreshPayload {
+  verifyRefreshToken(refreshToken: string): RefreshPayloadDto {
     return this.refreshTokenService.verifyToken(refreshToken);
   }
 }

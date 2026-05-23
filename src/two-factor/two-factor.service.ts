@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import { ClientService, Services, UserQuery } from '@ross2p/common';
-import { TokenPayloadDto } from '@ross2p/types';
 import { TwoFactorRepository } from './two-factor.repository';
 import { AuthService } from '../auth/auth.service';
+import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
 

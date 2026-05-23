@@ -5,10 +5,8 @@ build
 
 *.log
 
-# IDE
 .vscode
 .idea
 
-# Git
 .git
 .gitignore

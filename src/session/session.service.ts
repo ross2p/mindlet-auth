@@ -4,7 +4,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Session } from '.prisma/client-auth';
 import { checkExists } from '@ross2p/common';
 import { AuthEvent, ClientService, Services } from '@ross2p/common';
 import { SessionRepository } from './session.repository';
@@ -81,7 +80,7 @@ export class SessionService {
   private async updateSession(
     sessionId: string,
     updateSessionDto: UpdateSessionDto,
-  ): Promise<Session> {
+  ): Promise<SessionEntity> {
     await checkExists(
       this.sessionRepository.findSessionById(sessionId),
       'Session not found',
@@ -89,20 +88,10 @@ export class SessionService {
     return this.sessionRepository.updateSession(sessionId, updateSessionDto);
   }
 
-  async updateRefreshToken(
-    sessionId: string,
-    updateSessionDto: { token: string; expiresAt: Date },
-  ): Promise<Session> {
-    return this.updateSession(sessionId, {
-      refreshTokenHash: sha256Hex(updateSessionDto.token),
-      expiresAt: updateSessionDto.expiresAt,
-    });
-  }
-
   async updateTwoFactorVerifiedAt(
     sessionId: string,
     twoFactorVerifiedAt: Date,
-  ): Promise<Session> {
+  ): Promise<SessionEntity> {
     return this.updateSession(sessionId, { twoFactorVerifiedAt });
   }
 
@@ -110,7 +99,10 @@ export class SessionService {
     return this.updateSession(sessionId, { lastUsedAt: new Date() });
   }
 
-  async revokeSession(sessionId: string, reason: string): Promise<Session> {
+  async revokeSession(
+    sessionId: string,
+    reason: string,
+  ): Promise<SessionEntity> {
     return this.updateSession(sessionId, {
       revokedAt: new Date(),
       revokedReason: reason,

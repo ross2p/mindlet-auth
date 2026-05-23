@@ -13,12 +13,10 @@ import {
   UserDetails,
   ValidationPipe,
 } from '@ross2p/common';
-import {
-  VerifyEmailCodeDto,
-  TokenPayloadDto,
-  verifyEmailCodeSchema,
-} from '@ross2p/types';
+import { verifyEmailCodeSchema } from '@ross2p/types';
 import { Throttle } from '@nestjs/throttler';
+import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
+import { VerifyEmailCodeDto } from './dto/verify-email-code.dto';
 
 @Controller('verify-email')
 @UseGuards(AuthGuard)

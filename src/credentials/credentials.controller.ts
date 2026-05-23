@@ -5,19 +5,16 @@ import {
   ResponseMessage,
   ValidationPipe,
 } from '@ross2p/common';
-import {
-  CreateUserDto,
-  LoginDto,
-  UserTokensDto,
-  createUserSchema,
-  loginSchema,
-} from '@ross2p/types';
+import { createUserSchema, loginSchema } from '@ross2p/types';
 import { Body, Controller, Post } from '@nestjs/common';
 import { CredentialsService } from './credentials.service';
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateUserDto } from './dto/create-user.dto';
+import { LoginDto } from './dto/login.dto';
 import { LoginWithContext } from './dto/login-with-context.dto';
 import { RegisterWithContext } from './dto/register-with-context.dto';
+import { UserTokensDto } from './dto/user-tokens.dto';
 
 @ApiTags('Credentials')
 @Controller('credentials')

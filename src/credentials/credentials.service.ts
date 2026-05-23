@@ -1,4 +1,3 @@
-import { CreateUserDto, UserTokensDto } from '@ross2p/types';
 import {
   BadRequestException,
   Inject,
@@ -17,8 +16,10 @@ import { EmailVerificationService } from '../email-verification/email-verificati
 import { SessionService } from '../session/session.service';
 import { SessionProvider } from '../session/session-provider.enum';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { CreateUserDto } from './dto/create-user.dto';
 import type { LoginWithContext } from './dto/login-with-context.dto';
 import type { RegisterWithContext } from './dto/register-with-context.dto';
+import { UserTokensDto } from './dto/user-tokens.dto';
 import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
 
 @Injectable()

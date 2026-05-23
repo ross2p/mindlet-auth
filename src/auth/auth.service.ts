@@ -5,11 +5,12 @@ import {
   Services,
   UserQuery,
 } from '@ross2p/common';
-import { TokenPayloadDto, TokensDto } from '@ross2p/types';
 import { SessionService } from '../session/session.service';
 import { UserTokenService } from '../token/user-token/user-token.service';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import type { AuthUserView } from './dto/auth-user.view';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { TokenPayloadDto } from './dto/token-payload.dto';
+import { TokensDto } from './dto/tokens.dto';
 
 @Injectable()
 export class AuthService {

@@ -27,13 +27,4 @@ export class PasswordResetTokenService {
     await this.passwordResetTokenRepository.delete(token);
     return { email: record.email };
   }
-
-  async revoke(token: string): Promise<{ revoked: boolean }> {
-    const record = await this.passwordResetTokenRepository.find(token);
-    if (!record) {
-      return { revoked: false };
-    }
-    await this.passwordResetTokenRepository.delete(token);
-    return { revoked: true };
-  }
 }

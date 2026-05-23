@@ -13,10 +13,10 @@ import {
   UserDetails,
   ValidationPipe,
 } from '@ross2p/common';
-import { TokenPayloadDto } from '@ross2p/types';
+import { verifyTwoFactorCodeSchema } from '@ross2p/types';
 import { Throttle } from '@nestjs/throttler';
+import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { VerifyTwoFactorCodeDto } from './dto/verify-two-factor-code.dto';
-import { verifyTwoFactorCodeSchema } from './dto/verify-two-factor-code.schema';
 
 @ApiTags('Two-factor authentication')
 @ApiBearerAuth()

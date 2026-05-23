@@ -2,9 +2,9 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { PasswordResetService } from './password-reset.service';
 import { Throttle } from '@nestjs/throttler';
 import { IsPublic, ResponseMessage, ValidationPipe } from '@ross2p/common';
-import { ResetPasswordDto, resetPasswordSchema } from '@ross2p/types';
+import { forgotPasswordSchema, resetPasswordSchema } from '@ross2p/types';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { forgotPasswordSchema } from './dto/forgot-password.schema';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller()
 export class PasswordResetController {

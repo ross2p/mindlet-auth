@@ -9,11 +9,12 @@ import {
   ValidationPipe,
 } from '@ross2p/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { TokenPayloadDto } from '@ross2p/types';
+import { refreshTokenSchema } from '@ross2p/types';
 import { AuthService } from './auth.service';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { accessTokenSchema } from './dto/access-token.schema';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { TokenPayloadDto } from './dto/token-payload.dto';
 
 @ApiTags('Auth')
 @Controller()
@@ -30,7 +31,8 @@ export class AuthController {
     type: TokenPayloadDto,
   })
   async refreshAccessToken(
-    @Body() refreshTokenDto: RefreshTokenDto,
+    @Body(new ValidationPipe(refreshTokenSchema))
+    refreshTokenDto: RefreshTokenDto,
   ): Promise<TokenPayloadDto> {
     return this.authService.refreshAccessToken(refreshTokenDto);
   }

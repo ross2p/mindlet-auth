@@ -1,13 +1,15 @@
+version: "3.8"
+
 services:
   auth-db:
     image: postgres:17
     hostname: auth_db
     ports:
-      - "${DATABASE_PORT:-5432}:5432"
+      - "${DATABASE_PORT:-5433}:5432"
     environment:
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME:-mindlet}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-mindlet}
+      POSTGRES_DB: ${DATABASE_NAME:-mindlet_auth}
       PGDATA: /var/lib/postgresql/data/pgdata
     env_file:
       - ./.env
@@ -16,7 +18,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-mindlet} -d ${DATABASE_NAME:-mindlet_auth}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,7 +47,7 @@ services:
     env_file:
       - ./.env
     environment:
-      DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@auth_db:5432/${DATABASE_NAME}?schema=public
+      DATABASE_URL: postgresql://${DATABASE_USERNAME:-mindlet}:${DATABASE_PASSWORD:-mindlet}@auth_db:5432/${DATABASE_NAME:-mindlet_auth}?schema=public
     depends_on:
       auth-db:
         condition: service_healthy
@@ -54,16 +56,18 @@ services:
 
   auth-service:
     build:
+      context: .
       dockerfile: Dockerfile
     hostname: auth-service
     ports:
-      - "${PORT:-3002}:3000"
+      - "${BACKEND_PORT:-3002}:3000"
     env_file:
       - ./.env
     environment:
+      KAFKA_BROKER: ${KAFKA_BROKER:-kafka:29092}
       DATABASE_HOST: auth_db
       DATABASE_PORT: 5432
-      DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@auth_db:5432/${DATABASE_NAME}?schema=public
+      DATABASE_URL: postgresql://${DATABASE_USERNAME:-mindlet}:${DATABASE_PASSWORD:-mindlet}@auth_db:5432/${DATABASE_NAME:-mindlet_auth}?schema=public
       REDIS_HOST: auth_cache
       REDIS_PORT: 6379
       REDIS_URL: redis://auth_cache:6379
