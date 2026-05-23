@@ -47,4 +47,4 @@ The enum `AuthEvent.ACCOUNT_TWO_FACTOR_ENABLED` still exists in `@ross2p/common`
 2. `AuthService.validateUserByToken` decodes and verifies the JWT (`UserTokenService.validateAccessToken`).
 3. `SessionService.findActiveSessionByIdOrThrow(sessionId)` loads the active session from the auth DB (revoked/expired sessions fail here).
 4. Response is `AuthenticatedUser`: `id`, `email`, `sessionId`, `twoFactorVerifiedAt`, `emailVerifiedAt` (from the access-token claims, after session consistency check).
-5. `@CurrentSessionId()` reads `request.user.sessionId` in controllers that need it.
+5. Controllers read `user.sessionId` from `@UserDetails()` to access the active session.

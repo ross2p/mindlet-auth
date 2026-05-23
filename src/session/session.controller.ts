@@ -12,7 +12,6 @@ import { SessionService } from './session.service';
 import {
   AuthGuard,
   AuthenticatedUser,
-  CurrentSessionId,
   ResponseMessage,
   UserDetails,
   ValidationPipe,
@@ -28,11 +27,8 @@ export class SessionController {
   @Post('sign-out')
   @HttpCode(204)
   @ResponseMessage('Signed out successfully')
-  async signOut(
-    @UserDetails() user: AuthenticatedUser,
-    @CurrentSessionId() sessionId: string,
-  ): Promise<void> {
-    await this.sessionService.signOut(user.id, sessionId, 'sign-out');
+  async signOut(@UserDetails() user: AuthenticatedUser): Promise<void> {
+    await this.sessionService.signOut(user.id, user.sessionId, 'sign-out');
   }
 
   @Post('sign-out-all')

@@ -9,7 +9,6 @@ import { EmailVerificationService } from './email-verification.service';
 import {
   AuthGuard,
   AuthenticatedUser,
-  CurrentSessionId,
   ResponseMessage,
   UserDetails,
   ValidationPipe,
@@ -58,12 +57,11 @@ export class EmailVerificationController {
   })
   verify(
     @UserDetails() user: AuthenticatedUser,
-    @CurrentSessionId() sessionId: string,
     @Body(new ValidationPipe(verifyEmailCodeSchema)) body: VerifyEmailCodeDto,
   ): Promise<TokenPayloadDto> {
     return this.emailVerificationService.checkCode({
       userId: user.id,
-      sessionId,
+      sessionId: user.sessionId,
       email: user.email,
       code: body.code,
     });

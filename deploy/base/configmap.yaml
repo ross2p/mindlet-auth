@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  namespace: mindlet
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/part-of: mindlet
+data:
+  PORT: "3000"
+  NODE_ENV: development
+  SERVICE_NAME: AUTH_SERVICE
+  SWAGGER_USER: admin
+  TWO_FACTOR_ISSUER: Mindlet

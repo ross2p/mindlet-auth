@@ -1,0 +1,86 @@
+services:
+  auth-db:
+    image: postgres:17
+    hostname: auth_db
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    env_file:
+      - ./.env
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-cache:
+    image: redis:7-alpine
+    hostname: auth_cache
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - auth_cache_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: npx prisma migrate deploy
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@auth_db:5432/${DATABASE_NAME}?schema=public
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      dockerfile: Dockerfile
+    hostname: auth-service
+    ports:
+      - "${PORT:-3002}:3000"
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_HOST: auth_db
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@auth_db:5432/${DATABASE_NAME}?schema=public
+      REDIS_HOST: auth_cache
+      REDIS_PORT: 6379
+      REDIS_URL: redis://auth_cache:6379
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      auth-cache:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: npm run start:prod
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  auth_db_data:
+  auth_cache_data:

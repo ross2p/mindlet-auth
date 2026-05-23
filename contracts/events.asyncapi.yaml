@@ -1,0 +1,6 @@
+# Placeholder — replace with real AsyncAPI when events are formalized.
+asyncapi: 3.0.0
+info:
+  title: auth events
+  version: 0.0.1
+channels: {}

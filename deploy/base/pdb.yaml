@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth
+  namespace: mindlet
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/part-of: mindlet
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth

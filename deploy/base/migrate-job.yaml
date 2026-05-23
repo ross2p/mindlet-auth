@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: auth-migrate
+  namespace: mindlet
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/part-of: mindlet
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - until pg_isready -h auth-postgres -U mindlet; do sleep 2; done
+      containers:
+        - name: migrate
+          image: mindlet-auth:dev
+          imagePullPolicy: IfNotPresent
+          workingDir: /app
+          command: ["npm", "run", "db:migrate:deploy"]
+          envFrom:
+            - secretRef:
+                name: auth-secret

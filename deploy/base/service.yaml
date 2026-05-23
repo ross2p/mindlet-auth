@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  namespace: mindlet
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/part-of: mindlet
+spec:
+  selector:
+    app.kubernetes.io/name: auth
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

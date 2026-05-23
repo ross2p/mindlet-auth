@@ -9,7 +9,6 @@ import { TwoFactorService } from './two-factor.service';
 import {
   AuthGuard,
   AuthenticatedUser,
-  CurrentSessionId,
   ResponseMessage,
   UserDetails,
   ValidationPipe,
@@ -35,8 +34,8 @@ export class TwoFactorController {
       'Requires a valid access token (e.g. short-lived token after password login).',
   })
   @ApiResponse({ status: 200, description: 'Email dispatched' })
-  resendCode(@CurrentSessionId() sessionId: string): Promise<void> {
-    return this.twoFactorService.sendCode({ sessionId });
+  resendCode(@UserDetails() user: AuthenticatedUser): Promise<void> {
+    return this.twoFactorService.sendCode({ sessionId: user.sessionId });
   }
 
   @Post('verify')
@@ -55,13 +54,12 @@ export class TwoFactorController {
   })
   verify(
     @UserDetails() user: AuthenticatedUser,
-    @CurrentSessionId() sessionId: string,
     @Body(new ValidationPipe(verifyTwoFactorCodeSchema))
     body: VerifyTwoFactorCodeDto,
   ): Promise<TokenPayloadDto> {
     return this.twoFactorService.checkCode({
       userId: user.id,
-      sessionId,
+      sessionId: user.sessionId,
       code: body.code,
     });
   }
