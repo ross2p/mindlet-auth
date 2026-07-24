@@ -8,5 +8,9 @@ export type ResetPasswordDto = {
 
 /** Completes the password-reset flow. Returns no data. */
 export async function resetPassword(dto: ResetPasswordDto): Promise<void> {
-  await apiV1Client.post("/auth/password-reset/reset-password", dto);
+  await apiV1Client.post("/auth/reset-password", {
+    token: dto.token,
+    password: dto.newPassword,
+    newPassword: dto.newPassword,
+  });
 }
