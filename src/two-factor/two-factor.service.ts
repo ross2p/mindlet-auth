@@ -74,11 +74,26 @@ export class TwoFactorService implements OnModuleInit {
     await this.createTwoFactorCode(args.sessionId);
   }
 
-  async checkCode(args: {
-    userId: string;
+  /** Step-up code for privileged actions (e.g. change-password) after unlock. */
+  async sendStepUpCode(args: { sessionId: string }): Promise<void> {
+    const session = await this.sessionService.findActiveSessionByIdOrThrow(
+      args.sessionId,
+    );
+    const user = await this.loadUser(session.userId);
+    if (!user.twoFactorEnabled) {
+      throw new BadRequestException('Two-factor authentication is not enabled');
+    }
+    await this.createTwoFactorCode(args.sessionId);
+  }
+
+  /**
+   * Validates and consumes a Redis 2FA code for the session (step-up / login).
+   * Does not mutate Session.twoFactorVerifiedAt.
+   */
+  async verifyChallengeCode(args: {
     sessionId: string;
     code: string;
-  }): Promise<TokenPayloadDto> {
+  }): Promise<void> {
     const twoFactorCode =
       await this.twoFactorRepository.findTwoFactorCodeBySessionId(
         args.sessionId,
@@ -104,6 +119,17 @@ export class TwoFactorService implements OnModuleInit {
     }
 
     await this.twoFactorRepository.deleteTwoFactorCode(args.sessionId);
+  }
+
+  async checkCode(args: {
+    userId: string;
+    sessionId: string;
+    code: string;
+  }): Promise<TokenPayloadDto> {
+    await this.verifyChallengeCode({
+      sessionId: args.sessionId,
+      code: args.code,
+    });
     const verifiedAt = new Date();
     await this.sessionService.updateTwoFactorVerifiedAt(
       args.sessionId,
