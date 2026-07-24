@@ -1,5 +1,6 @@
-@import "tailwindcss";
 @import "@ross2p/shared/styles";
+@source "../**/*.tsx";
+@source "../**/*.ts";
 
 /* ---- Auth page: floating background orbs ---- */
 @keyframes floatOrb1 {

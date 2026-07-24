@@ -56,12 +56,13 @@ export const ResendCountdownButton = ({
 
   return (
     <Button
-      type="button"
-      variant="ghost"
-      size="sm"
+      htmlType="button"
+      type="text"
+      size="small"
+      block
       disabled={isCooling || isPending}
       onClick={handleClick}
-      className="w-full text-muted-foreground transition-colors hover:text-primary"
+      className="text-muted-foreground transition-colors hover:text-primary"
     >
       {isCooling ? (
         <span className="flex items-center gap-1.5 tabular-nums">

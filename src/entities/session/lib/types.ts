@@ -43,6 +43,12 @@ export type AuthUser = {
 export type AuthTokensData = {
   user: AuthUser;
   is2faEnabled: boolean;
+  sessionId?: string;
+  platformAccessOpen?: boolean;
+  twoFactorChallenge?: {
+    required: boolean;
+    methods: Array<{ id: string; available: boolean }>;
+  } | null;
   accessToken: TokenDto;
   refreshToken: TokenDto;
 };

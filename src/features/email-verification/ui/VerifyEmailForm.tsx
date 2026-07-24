@@ -61,14 +61,15 @@ export const VerifyEmailForm = () => {
 
         <div className="animate-field animate-field-2">
           <Button
-            type="submit"
-            size="lg"
+            htmlType="submit"
+            type="primary"
+            size="large"
             loading={isPending}
-            loadingText="Verifying…"
+            block
             disabled={code.length !== 6}
-            className="w-full transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0 disabled:translate-y-0"
+            className="transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0 disabled:translate-y-0"
           >
-            Verify email
+            {isPending ? "Verifying…" : "Verify email"}
           </Button>
         </div>
 
