@@ -15,6 +15,7 @@ import { LoginDto } from './dto/login.dto';
 import { LoginWithContext } from './dto/login-with-context.dto';
 import { RegisterWithContext } from './dto/register-with-context.dto';
 import { UserTokensDto } from './dto/user-tokens.dto';
+import { LOGIN_RATE_LIMIT } from '../auth-challenge.constants';
 
 @ApiTags('Credentials')
 @Controller('credentials')
@@ -24,7 +25,12 @@ export class CredentialsController {
   @Post('login')
   @IsPublic()
   @ResponseMessage('Login successful')
-  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @Throttle({
+    default: {
+      limit: LOGIN_RATE_LIMIT.limit,
+      ttl: LOGIN_RATE_LIMIT.ttlMs,
+    },
+  })
   @ApiOperation({ summary: 'Sign in with email and password' })
   @ApiResponse({
     status: 200,

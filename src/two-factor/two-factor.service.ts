@@ -13,6 +13,7 @@ import { AuthService } from '../auth/auth.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { isTwoFactorAttemptsExceeded } from '../auth-challenge.constants';
 
 @Injectable()
 export class TwoFactorService implements OnModuleInit {
@@ -87,7 +88,7 @@ export class TwoFactorService implements OnModuleInit {
         'This two-factor code is invalid or has expired. Request a new code.',
       );
     }
-    if (twoFactorCode.attempts >= 5) {
+    if (isTwoFactorAttemptsExceeded(twoFactorCode.attempts)) {
       await this.twoFactorRepository.deleteTwoFactorCode(args.sessionId);
       throw new UnauthorizedException(
         'Too many incorrect two-factor codes. Please start sign-in again.',
