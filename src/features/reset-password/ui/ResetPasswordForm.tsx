@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
-import { Input, Button } from "@ross2p/shared";
+import { Input, Button, FormItem } from "@ross2p/shared";
 import { routes } from "@ross2p/shared";
 import { useResetPassword } from "../model/hooks/useResetPassword";
 import { resetPasswordFormSchema } from "../model/schemas/reset-password-form.schema";
@@ -92,25 +92,28 @@ export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
             name="newPassword"
             control={control}
             render={({ field }) => (
-              <Input
-                {...field}
+              <FormItem
                 label="New password"
-                type={showNew ? "text" : "password"}
-                autoComplete="new-password"
-                error={!!errors.newPassword}
-                helperText={errors.newPassword?.message}
-                disabled={isPending}
-                endAdornment={
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => setShowNew((p) => !p)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <EyeIcon open={showNew} />
-                  </button>
-                }
-              />
+                validateStatus={errors.newPassword ? "error" : undefined}
+                help={errors.newPassword?.message}
+              >
+                <Input
+                  {...field}
+                  type={showNew ? "text" : "password"}
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  suffix={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowNew((p) => !p)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <EyeIcon open={showNew} />
+                    </button>
+                  }
+                />
+              </FormItem>
             )}
           />
         </div>
@@ -120,38 +123,42 @@ export const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
             name="confirmPassword"
             control={control}
             render={({ field }) => (
-              <Input
-                {...field}
+              <FormItem
                 label="Confirm password"
-                type={showConfirm ? "text" : "password"}
-                autoComplete="new-password"
-                error={!!errors.confirmPassword}
-                helperText={errors.confirmPassword?.message}
-                disabled={isPending}
-                endAdornment={
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => setShowConfirm((p) => !p)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <EyeIcon open={showConfirm} />
-                  </button>
-                }
-              />
+                validateStatus={errors.confirmPassword ? "error" : undefined}
+                help={errors.confirmPassword?.message}
+              >
+                <Input
+                  {...field}
+                  type={showConfirm ? "text" : "password"}
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  suffix={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowConfirm((p) => !p)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <EyeIcon open={showConfirm} />
+                    </button>
+                  }
+                />
+              </FormItem>
             )}
           />
         </div>
 
         <div className="animate-field animate-field-3 pt-1">
           <Button
-            type="submit"
-            size="lg"
+            htmlType="submit"
+            type="primary"
+            size="large"
             loading={isPending}
-            loadingText="Resetting…"
-            className="w-full transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0"
+            block
+            className="transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0"
           >
-            Set new password
+            {isPending ? "Resetting…" : "Set new password"}
           </Button>
         </div>
       </form>

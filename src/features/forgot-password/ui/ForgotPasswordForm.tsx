@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
-import { Input, Button } from "@ross2p/shared";
+import { Input, Button, FormItem } from "@ross2p/shared";
 import { routes } from "@ross2p/shared";
 import { useForgotPassword } from "../model/hooks/useForgotPassword";
 import { forgotPasswordSchema } from "../model/schemas/forgot-password.schema";
@@ -83,28 +83,32 @@ export const ForgotPasswordForm = () => {
             name="email"
             control={control}
             render={({ field }) => (
-              <Input
-                {...field}
+              <FormItem
                 label="Email"
-                type="email"
-                autoComplete="email"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                disabled={isPending}
-              />
+                validateStatus={errors.email ? "error" : undefined}
+                help={errors.email?.message}
+              >
+                <Input
+                  {...field}
+                  type="email"
+                  autoComplete="email"
+                  disabled={isPending}
+                />
+              </FormItem>
             )}
           />
         </div>
 
         <div className="animate-field animate-field-2 pt-1">
           <Button
-            type="submit"
-            size="lg"
+            htmlType="submit"
+            type="primary"
+            size="large"
             loading={isPending}
-            loadingText="Sending…"
-            className="w-full transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0"
+            block
+            className="transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0"
           >
-            Send reset link
+            {isPending ? "Sending…" : "Send reset link"}
           </Button>
         </div>
       </form>
