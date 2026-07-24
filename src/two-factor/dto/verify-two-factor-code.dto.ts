@@ -1,10 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { VerifyTwoFactorCodeType } from '@ross2p/types';
 
-export class VerifyTwoFactorCodeDto implements VerifyTwoFactorCodeType {
+export class VerifyTwoFactorCodeDto {
   @ApiProperty({
-    description: 'Six-digit two-factor authentication code',
-    example: '654321',
+    description: 'Selected 2FA method from the picker',
+    enum: ['email', 'totp', 'backup'],
+    example: 'email',
+  })
+  method!: 'email' | 'totp' | 'backup';
+
+  @ApiProperty({
+    description: 'OTP or backup code',
+    example: '123456',
   })
   code!: string;
 }

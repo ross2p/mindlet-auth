@@ -1,8 +1,8 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
+  HttpCode,
   Inject,
   Post,
   UseGuards,
@@ -24,12 +24,14 @@ import {
   UserQuery,
   ValidationPipe,
 } from '@ross2p/common';
-import { verifyTwoFactorCodeSchema } from '@ross2p/types';
 import { Throttle } from '@nestjs/throttler';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { VerifyTwoFactorCodeDto } from './dto/verify-two-factor-code.dto';
 import { buildTwoFactorChallenge } from './two-factor-methods.util';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { SessionService } from '../session/session.service';
+import { AuthErrorCode, throwAuthConflict } from '../auth-exception';
+import { verifyTwoFactorCodeSchema } from './schemas/verify-two-factor-code.schema';
 
 @ApiTags('Two-factor authentication')
 @ApiBearerAuth()
@@ -37,6 +39,7 @@ import type { AuthUserView } from '../auth/dto/auth-user.view';
 export class TwoFactorController {
   constructor(
     private readonly twoFactorService: TwoFactorService,
+    private readonly sessionService: SessionService,
     @Inject(Services.USER) private readonly userService: ClientService,
   ) {}
 
@@ -46,7 +49,12 @@ export class TwoFactorController {
   @ApiOperation({
     summary: 'List 2FA methods for the current login challenge',
   })
+  @ApiResponse({ status: 200, description: 'Methods for picker' })
+  @ApiResponse({ status: 409, description: '2FA challenge not pending' })
   async listMethods(@UserDetails() user: AuthenticatedUser) {
+    const session = await this.sessionService.findActiveSessionByIdOrThrow(
+      user.sessionId,
+    );
     const fullUser = await this.userService.sendAndReturnPromise<
       AuthUserView,
       { userId: string }
@@ -55,36 +63,35 @@ export class TwoFactorController {
     const challenge = buildTwoFactorChallenge({
       twoFactorEnabled: fullUser.twoFactorEnabled,
     });
-    if (!challenge) {
-      throw new BadRequestException(
-        'Two-factor challenge is not pending for this session',
+    if (!challenge || session.twoFactorVerifiedAt != null) {
+      throwAuthConflict(
+        AuthErrorCode.twoFactorNotRequired,
+        'Two-factor challenge is not pending',
       );
     }
-    return challenge;
+    return { methods: challenge.methods };
   }
 
   @Post('resend-code')
   @UseGuards(AuthGuard)
+  @HttpCode(204)
   @Throttle({ default: { limit: 5, ttl: 900_000 } })
   @ResponseMessage('Two-factor code sent')
   @ApiOperation({
     summary: 'Resend login two-factor email code',
-    description:
-      'Requires a valid access token (e.g. short-lived token after password login).',
   })
-  @ApiResponse({ status: 200, description: 'Email dispatched' })
+  @ApiResponse({ status: 204, description: 'Code dispatched' })
   resendCode(@UserDetails() user: AuthenticatedUser): Promise<void> {
     return this.twoFactorService.sendCode({ sessionId: user.sessionId });
   }
 
   @Post('verify')
   @UseGuards(AuthGuard)
+  @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 900_000 } })
   @ResponseMessage('2FA verified')
   @ApiOperation({
     summary: 'Verify login two-factor with email code',
-    description:
-      'Returns a new access token payload (same shape as POST /auth/refresh).',
   })
   @ApiResponse({
     status: 200,

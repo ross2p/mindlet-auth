@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import {
   AuthMessage,
@@ -23,12 +23,21 @@ export class AuthController {
 
   @Post('refresh')
   @IsPublic()
+  @HttpCode(200)
   @ResponseMessage('Access token refreshed')
   @ApiOperation({ summary: 'Mint a new access token from a refresh token' })
   @ApiResponse({
     status: 200,
     description: 'New access JWT and decoded payload',
     type: TokenPayloadDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Refresh blocked until email/2FA challenges complete',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh expired or invalid',
   })
   async refreshAccessToken(
     @Body(new ValidationPipe(refreshTokenSchema))

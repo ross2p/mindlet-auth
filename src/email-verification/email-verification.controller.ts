@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -28,6 +28,7 @@ export class EmailVerificationController {
   ) {}
 
   @Post('resend-code')
+  @HttpCode(204)
   @Throttle({ default: { limit: 5, ttl: 900_000 } })
   @ResponseMessage('Verification code sent')
   @ApiOperation({
@@ -35,12 +36,15 @@ export class EmailVerificationController {
     description:
       'Requires a valid access token (e.g. short-lived token after registration).',
   })
-  @ApiResponse({ status: 200, description: 'Email dispatched' })
+  @ApiResponse({ status: 204, description: 'Email dispatched' })
   resendCode(@UserDetails() user: AuthenticatedUser): Promise<void> {
-    return this.emailVerificationService.sendCode({ userId: user.id });
+    return this.emailVerificationService.sendCode({
+      sessionId: user.sessionId,
+    });
   }
 
   @Post('verify')
+  @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 900_000 } })
   @ResponseMessage('Email verified successfully')
   @ApiOperation({

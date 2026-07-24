@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -19,6 +18,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { PasswordResetTokenService } from '../token/password-reset-token/password-reset-token.service';
 import { SessionService } from '../session/session.service';
 import { TwoFactorService } from '../two-factor/two-factor.service';
+import { AuthErrorCode, throwAuthBadRequest } from '../auth-exception';
 
 @Injectable()
 export class PasswordResetService implements OnModuleInit {
@@ -78,7 +78,23 @@ export class PasswordResetService implements OnModuleInit {
 
   /** AC-13 / AC-15 — consume token, update password, revoke all Sessions. */
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
-    const { email } = await this.passwordResetTokenService.consume(dto.token);
+    const newPassword = dto.newPassword ?? dto.password;
+    if (!newPassword) {
+      throwAuthBadRequest(
+        AuthErrorCode.resetCodeInvalid,
+        'Reset code expired or already used — request a new one',
+      );
+    }
+
+    let email: string;
+    try {
+      ({ email } = await this.passwordResetTokenService.consume(dto.token));
+    } catch {
+      throwAuthBadRequest(
+        AuthErrorCode.resetCodeInvalid,
+        'Reset code expired or already used — request a new one',
+      );
+    }
 
     const user = await this.userService.sendAndReturnPromise<
       AuthUserView,
@@ -87,7 +103,7 @@ export class PasswordResetService implements OnModuleInit {
 
     await this.userService.sendAndReturnPromise(UserPrivateMessage.UPDATE, {
       userId: user.id,
-      password: dto.newPassword,
+      password: newPassword,
     });
     await this.sessionService.signOutAll(user.id, 'password-reset');
   }
@@ -111,12 +127,22 @@ export class PasswordResetService implements OnModuleInit {
 
     if (user.twoFactorEnabled) {
       if (!args.twoFactorCode?.trim()) {
-        throw new BadRequestException('Current credentials were not confirmed');
+        throwAuthBadRequest(
+          AuthErrorCode.passwordChangeRejected,
+          'Current credentials were not confirmed',
+        );
       }
-      await this.twoFactorService.verifyChallengeCode({
-        sessionId: args.sessionId,
-        code: args.twoFactorCode,
-      });
+      try {
+        await this.twoFactorService.verifyChallengeCode({
+          sessionId: args.sessionId,
+          code: args.twoFactorCode,
+        });
+      } catch {
+        throwAuthBadRequest(
+          AuthErrorCode.passwordChangeRejected,
+          'Current credentials were not confirmed',
+        );
+      }
     }
 
     const passwordOk = await this.userService
@@ -127,7 +153,10 @@ export class PasswordResetService implements OnModuleInit {
       .catch((): boolean => false);
 
     if (!passwordOk) {
-      throw new BadRequestException('Current credentials were not confirmed');
+      throwAuthBadRequest(
+        AuthErrorCode.passwordChangeRejected,
+        'Current credentials were not confirmed',
+      );
     }
 
     await this.userService.sendAndReturnPromise(UserPrivateMessage.UPDATE, {

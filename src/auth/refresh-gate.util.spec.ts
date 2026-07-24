@@ -3,13 +3,19 @@ import { assertRefreshAllowed } from './refresh-gate.util';
 
 describe('refresh gate (AC-09/12/18)', () => {
   it('blocks refresh when email is not verified', () => {
-    expect(() =>
+    try {
       assertRefreshAllowed({
         emailVerifiedAt: null,
         twoFactorEnabled: false,
         twoFactorVerifiedAt: null,
-      }),
-    ).toThrow(ForbiddenException);
+      });
+      fail('expected ForbiddenException');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ForbiddenException);
+      expect((err as ForbiddenException).getResponse()).toMatchObject({
+        code: 'auth.refresh_blocked_pending_challenge',
+      });
+    }
   });
 
   it('blocks refresh when 2FA is pending', () => {

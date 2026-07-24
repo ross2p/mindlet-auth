@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { PasswordResetService } from './password-reset.service';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -9,13 +9,19 @@ import {
   UserDetails,
   ValidationPipe,
 } from '@ross2p/common';
-import { forgotPasswordSchema, resetPasswordSchema } from '@ross2p/types';
+import { forgotPasswordSchema } from '@ross2p/types';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { changePasswordSchema } from './schemas/change-password.schema';
+import { resetPasswordPortSchema } from './schemas/reset-password.schema';
 import { FORGOT_PASSWORD_RATE_LIMIT } from '../auth-challenge.constants';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('Password')
 @Controller()
@@ -24,6 +30,7 @@ export class PasswordResetController {
 
   @Post('forgot-password')
   @IsPublic()
+  @HttpCode(204)
   @ResponseMessage('If an account exists, a reset email will be sent')
   @Throttle({
     default: {
@@ -32,6 +39,7 @@ export class PasswordResetController {
     },
   })
   @ApiOperation({ summary: 'Request password reset (anti-enumeration)' })
+  @ApiResponse({ status: 204, description: 'Identical acknowledgement' })
   forgotPassword(
     @Body(new ValidationPipe(forgotPasswordSchema)) body: ForgotPasswordDto,
   ): Promise<void> {
@@ -40,6 +48,7 @@ export class PasswordResetController {
 
   @Post('reset-password')
   @IsPublic()
+  @HttpCode(204)
   @ResponseMessage('Password reset successful')
   @Throttle({
     default: {
@@ -48,8 +57,13 @@ export class PasswordResetController {
     },
   })
   @ApiOperation({ summary: 'Complete password reset and revoke all sessions' })
+  @ApiResponse({
+    status: 204,
+    description: 'Password updated; sessions revoked',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
   resetPassword(
-    @Body(new ValidationPipe(resetPasswordSchema)) body: ResetPasswordDto,
+    @Body(new ValidationPipe(resetPasswordPortSchema)) body: ResetPasswordDto,
   ): Promise<void> {
     return this.passwordResetService.resetPassword(body);
   }
@@ -57,10 +71,12 @@ export class PasswordResetController {
   @Post('change-password/request-2fa')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
+  @HttpCode(204)
   @ResponseMessage('Two-factor code sent')
   @ApiOperation({
     summary: 'Send step-up 2FA code before change-password',
   })
+  @ApiResponse({ status: 204, description: 'Code dispatched' })
   requestChangePassword2fa(
     @UserDetails() user: AuthenticatedUser,
   ): Promise<void> {
@@ -70,10 +86,16 @@ export class PasswordResetController {
   @Post('change-password')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
+  @HttpCode(204)
   @ResponseMessage('Password changed successfully')
   @ApiOperation({
     summary: 'Change password and revoke all sessions',
   })
+  @ApiResponse({
+    status: 204,
+    description: 'Password changed; sessions revoked',
+  })
+  @ApiResponse({ status: 400, description: 'Credentials not confirmed' })
   changePassword(
     @UserDetails() user: AuthenticatedUser,
     @Body(new ValidationPipe(changePasswordSchema)) body: ChangePasswordDto,

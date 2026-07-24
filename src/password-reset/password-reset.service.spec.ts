@@ -95,7 +95,9 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
           token: 'bad',
           newPassword: 'Passw0rd2',
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toMatchObject({
+        response: { code: 'auth.reset_code_invalid' },
+      });
 
       expect(sessionService.signOutAll).not.toHaveBeenCalled();
     });

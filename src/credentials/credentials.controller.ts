@@ -6,7 +6,7 @@ import {
   ValidationPipe,
 } from '@ross2p/common';
 import { createUserSchema, loginSchema } from '@ross2p/types';
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { CredentialsService } from './credentials.service';
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -24,6 +24,7 @@ export class CredentialsController {
 
   @Post('login')
   @IsPublic()
+  @HttpCode(200)
   @ResponseMessage('Login successful')
   @Throttle({
     default: {
