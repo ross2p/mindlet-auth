@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
-import { Input, Button } from "@ross2p/shared";
+import { Input, Button, FormItem } from "@ross2p/shared";
 import { routes } from "@ross2p/shared";
 import { loginSchema } from "@ross2p/types/dist/schemas/auth/login.schema";
-import type { LoginDto } from "@ross2p/types";
+import type { LoginType } from "@ross2p/types";
 import { useLogin } from "../model/hooks/useLogin";
 import { decodeAccessToken, getNextAuthStep } from "@entities/session";
+import { persistTwoFactorChallenge } from "@features/two-factor-challenge/lib/challenge-methods";
 
 const EyeIcon = ({ open }: { open: boolean }) =>
   open ? (
@@ -28,17 +29,28 @@ export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { mutate: login, isPending } = useLogin();
 
-  const { handleSubmit, control, formState: { errors } } = useForm<LoginDto>({
+  const { handleSubmit, control, formState: { errors } } = useForm<LoginType>({
     resolver: joiResolver(loginSchema),
   });
 
-  const onSubmit = (data: LoginDto) => {
+  const onSubmit = (data: LoginType) => {
     login(data, {
       onSuccess: (response) => {
+        persistTwoFactorChallenge(
+          response.data.twoFactorChallenge as
+            | import("@features/two-factor-challenge/lib/challenge-methods").TwoFactorChallengeSnapshot
+            | null
+            | undefined,
+        );
         const payload = decodeAccessToken(response.data.accessToken.token);
-        const step = payload ? getNextAuthStep(payload) : "dashboard";
+        const step = payload
+          ? getNextAuthStep(payload, {
+              platformAccessOpen: response.data.platformAccessOpen,
+            })
+          : "dashboard";
         if (step === "twoFactor") window.location.href = routes.twoFactor;
-        else if (step === "verifyEmail") window.location.href = routes.verifyEmail;
+        else if (step === "verifyEmail")
+          window.location.href = routes.verifyEmail;
         else window.location.href = routes.dashboard;
       },
     });
@@ -61,15 +73,18 @@ export const LoginForm = () => {
             name="email"
             control={control}
             render={({ field }) => (
-              <Input
-                {...field}
+              <FormItem
                 label="Email"
-                type="email"
-                autoComplete="email"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                disabled={isPending}
-              />
+                validateStatus={errors.email ? "error" : undefined}
+                help={errors.email?.message}
+              >
+                <Input
+                  {...field}
+                  type="email"
+                  autoComplete="email"
+                  disabled={isPending}
+                />
+              </FormItem>
             )}
           />
         </div>
@@ -79,26 +94,29 @@ export const LoginForm = () => {
             name="password"
             control={control}
             render={({ field }) => (
-              <Input
-                {...field}
+              <FormItem
                 label="Password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                disabled={isPending}
-                endAdornment={
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => setShowPassword((p) => !p)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    <EyeIcon open={showPassword} />
-                  </button>
-                }
-              />
+                validateStatus={errors.password ? "error" : undefined}
+                help={errors.password?.message}
+              >
+                <Input
+                  {...field}
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  disabled={isPending}
+                  suffix={
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword((p) => !p)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon open={showPassword} />
+                    </button>
+                  }
+                />
+              </FormItem>
             )}
           />
         </div>
@@ -114,13 +132,14 @@ export const LoginForm = () => {
 
         <div className="animate-field animate-field-4 pt-1">
           <Button
-            type="submit"
-            size="lg"
+            htmlType="submit"
+            type="primary"
+            size="large"
             loading={isPending}
-            loadingText="Signing in…"
-            className="w-full transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0"
+            block
+            className="transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0"
           >
-            Sign in
+            {isPending ? "Signing in…" : "Sign in"}
           </Button>
         </div>
       </form>

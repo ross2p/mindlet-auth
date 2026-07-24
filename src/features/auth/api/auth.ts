@@ -1,13 +1,13 @@
 import { apiV1Client } from "@ross2p/shared";
 import {
-  type CreateUserDto,
+  type CreateUserType,
   type GlobalResponse,
-  type LoginDto,
-  type UserTokensDto,
+  type LoginType,
+  type UserTokensType,
 } from "@ross2p/types";
 
-export const login = async (login: LoginDto): Promise<GlobalResponse<UserTokensDto>> => {
-  const response = await apiV1Client.post<GlobalResponse<UserTokensDto>>(
+export const login = async (login: LoginType): Promise<GlobalResponse<UserTokensType>> => {
+  const response = await apiV1Client.post<GlobalResponse<UserTokensType>>(
     "/auth/login",
     login,
   );
@@ -15,8 +15,8 @@ export const login = async (login: LoginDto): Promise<GlobalResponse<UserTokensD
 };
 
 
-export const register = async (register: CreateUserDto): Promise<GlobalResponse<UserTokensDto>> => {
-  const response = await apiV1Client.post<GlobalResponse<UserTokensDto>>(
+export const register = async (register: CreateUserType): Promise<GlobalResponse<UserTokensType>> => {
+  const response = await apiV1Client.post<GlobalResponse<UserTokensType>>(
     "/auth/register",
     register,
   );
