@@ -12,6 +12,7 @@ import { EmailVerificationModule } from './email-verification/email-verification
 import { TwoFactorModule } from './two-factor/two-factor.module';
 import { TwoFactorEnrollmentModule } from './two-factor-enrollment/two-factor-enrollment.module';
 import { TokenModule } from './token/token.module';
+import { RedisThrottlerStorage } from './throttling/redis-throttler.storage';
 
 @Module({
   imports: [
@@ -19,7 +20,9 @@ import { TokenModule } from './token/token.module';
     SessionModule,
     TokenModule,
     ThrottlerModule.forRoot({
+      // Global ceiling; login/forgot override via @Throttle on controllers (T4 NFR).
       throttlers: [{ name: 'default', ttl: 60_000, limit: 200 }],
+      storage: new RedisThrottlerStorage(process.env.REDIS_URL ?? ''),
     }),
     AuthModule,
     CredentialsModule,
