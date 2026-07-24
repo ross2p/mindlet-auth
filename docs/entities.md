@@ -2,7 +2,7 @@
 
 > [← Back to Auth README](../README.md)
 
-> **Reality vs. domain model:** The canonical [Domain model](../../../../docs/02-domain-model.md) lists `Account` and token-like entities under `auth`. In **this codebase** there is no `Account`; **`User`** lives in the [user service](../../user/README.md). Short-lived JWTs and refresh token *strings* are issued **in-process** by [`src/token/`](../src/token/) (`UserTokenService`). **`auth`** persists **`Session`** (refresh hash + metadata). **Password-reset opaque tokens**, **2FA**, and **email verification codes** live in **Redis** (repositories in this service); whether the user must complete 2FA or email verification is reflected on **`User`** (`twoFactorEnabled`, `emailVerified`) in the user service.
+> **Reality vs. domain model:** Product identity is **User** (not Account). **`User`** (+ `deletedAt`, `emailVerifiedAt`) lives in the [user service](../../user/README.md). Short-lived JWTs and refresh strings are issued **in-process** by [`src/token/`](../src/token/). **`auth`** persists **`Session`**. Redis holds password-reset tokens, login 2FA codes (by `sessionId`), and email verification codes. 2FA **enabled** flag comes from user settings (`twoFactorEnabled`).
 
 ## ER diagram (Postgres — `auth` service)
 
@@ -47,15 +47,15 @@ erDiagram
 
 ## Two-factor and email verification (not in Postgres)
 
-- **2FA** — `TwoFactorRepository` stores a short-lived 6-digit code and attempt counter in Redis, keyed by `userId`. Whether 2FA is required comes from **`User.twoFactorEnabled`** (user service).
-- **Email verification** — `EmailVerificationRepository` stores a short-lived 6-digit code in Redis. **`User.emailVerified`** is updated via `user.email.mark_verified` after a successful verify.
+- **2FA challenge** — `TwoFactorRepository` stores a short-lived 6-digit code and attempt counter in Redis, keyed by **`sessionId`**. Required when `twoFactorEnabled` and `Session.twoFactorVerifiedAt` is null.
+- **Email verification** — Redis code; **`User.emailVerifiedAt`** set via `user.email.mark_verified`.
 
 ## Cross-context
 
 - **JWT & password-reset tokens** — issued and verified in-process ([`src/token/`](../src/token/)); **access** JWTs carry `id`, `email`, `sessionId`, `twoFactorVerifiedAt`, `emailVerifiedAt`, `type`, and standard `iat`/`exp`. **Refresh** JWTs carry only `id`, `sessionId`, and `type` (`refresh`). Short access TTL applies when `pendingVerification` is set at mint time.
 - **User service** — `user.create`, `user.get_by_email`, `user.password.verify`, `user.get_by_id`, `user.email.mark_verified`, `user.password.update` (password reset from auth).
-- **Notification service** — patterns such as `notification.send-two-factor` and `email.send-mail-confirmation` (fire-and-forget from `auth`).
+- **Notification service** — `email.send-mail-confirmation`, `notification.send-two-factor`, `email.send-password-reset` (fire-and-forget from `auth`).
 
 ## TODO
 
-- **Google OAuth** — `Session.provider` + OAuth flow when implemented.
+- **Google OAuth** — non-goal for auth MVP; scaffold only.
