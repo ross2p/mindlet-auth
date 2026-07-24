@@ -13,6 +13,18 @@ export class UserTokensDto implements UserTokensType {
   })
   is2faEnabled!: boolean;
 
+  @ApiProperty({
+    description:
+      'Whether Platform access is open (email verified and 2FA challenge complete if required)',
+  })
+  platformAccessOpen!: boolean;
+
+  @ApiProperty({
+    description: 'Current session id',
+    format: 'uuid',
+  })
+  sessionId!: string;
+
   @ApiProperty({ type: TokenPayloadDto })
   accessToken!: TokenPayloadDto;
 

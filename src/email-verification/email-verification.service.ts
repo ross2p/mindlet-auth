@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   OnModuleInit,
 } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import {
   ClientService,
   Services,
@@ -13,25 +15,58 @@ import {
 import { EmailVerificationRepository } from './email-verification.repository';
 import { AuthService } from '../auth/auth.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
+import { SessionService } from '../session/session.service';
+import type { AuthUserView } from '../auth/dto/auth-user.view';
 
 @Injectable()
 export class EmailVerificationService implements OnModuleInit {
   constructor(
     @Inject(Services.USER) private readonly userService: ClientService,
+    @Inject(Services.NOTIFICATION)
+    private readonly notificationClient: ClientService,
     private readonly emailVerificationRepository: EmailVerificationRepository,
     private readonly authService: AuthService,
+    private readonly sessionService: SessionService,
   ) {}
 
   async onModuleInit() {
     this.userService.subscribeToResponseOf(UserMessage.EMAIL_MARK_VERIFIED);
     this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
+    this.notificationClient.subscribeToResponseOf(
+      'email.send-mail-confirmation',
+    );
     await this.userService.connect();
+    await this.notificationClient.connect();
   }
 
-  sendCode(args: { sessionId?: string; userId?: string }): Promise<void> {
-    void args;
-    // TODO: persist code + dispatch notification email
-    return Promise.resolve();
+  private generateCode(): string {
+    return randomInt(0, 1_000_000).toString().padStart(6, '0');
+  }
+
+  async sendCode(args: { sessionId: string }): Promise<void> {
+    const session = await this.sessionService.findActiveSessionByIdOrThrow(
+      args.sessionId,
+    );
+    const user = await this.userService.sendAndReturnPromise<
+      AuthUserView,
+      { userId: string }
+    >(UserQuery.GET_BY_ID, { userId: session.userId });
+
+    if (user.emailVerifiedAt != null) {
+      throw new ConflictException('Email is already verified');
+    }
+
+    const code = this.generateCode();
+    await this.emailVerificationRepository.createEmailVerificationCode(
+      user.id,
+      code,
+    );
+    await this.notificationClient
+      .sendAndReturnPromise('email.send-mail-confirmation', {
+        userId: user.id,
+        code,
+      })
+      .catch(() => undefined);
   }
 
   async checkCode(args: {
@@ -40,12 +75,23 @@ export class EmailVerificationService implements OnModuleInit {
     email: string;
     code: string;
   }): Promise<TokenPayloadDto> {
+    const user = await this.userService.sendAndReturnPromise<
+      AuthUserView,
+      { userId: string }
+    >(UserQuery.GET_BY_ID, { userId: args.userId });
+
+    if (user.emailVerifiedAt != null) {
+      throw new ConflictException('Email is already verified');
+    }
+
     const stored =
       await this.emailVerificationRepository.findEmailVerificationCodeByUserId(
         args.userId,
       );
     if (!stored || stored.code !== args.code.trim()) {
-      throw new BadRequestException('Invalid code');
+      throw new BadRequestException(
+        'Code is invalid or expired — request a new one',
+      );
     }
 
     await this.emailVerificationRepository.deleteEmailVerificationCode(

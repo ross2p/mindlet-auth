@@ -21,6 +21,7 @@ import type { LoginWithContext } from './dto/login-with-context.dto';
 import type { RegisterWithContext } from './dto/register-with-context.dto';
 import { UserTokensDto } from './dto/user-tokens.dto';
 import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
+import { computePlatformAccessOpen } from '../platform-access.util';
 
 @Injectable()
 export class CredentialsService implements OnModuleInit {
@@ -82,6 +83,12 @@ export class CredentialsService implements OnModuleInit {
     return {
       user: mapAuthUserViewToAuthUserDto(user),
       is2faEnabled: user.twoFactorEnabled,
+      sessionId: session.id,
+      platformAccessOpen: computePlatformAccessOpen({
+        emailVerifiedAt: user.emailVerifiedAt,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorVerifiedAt: session.twoFactorVerifiedAt,
+      }),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
@@ -114,6 +121,12 @@ export class CredentialsService implements OnModuleInit {
     return {
       user: mapAuthUserViewToAuthUserDto(user),
       is2faEnabled: user.twoFactorEnabled,
+      sessionId: session.id,
+      platformAccessOpen: computePlatformAccessOpen({
+        emailVerifiedAt: user.emailVerifiedAt,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorVerifiedAt: session.twoFactorVerifiedAt,
+      }),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
