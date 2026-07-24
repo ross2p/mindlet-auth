@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   OnModuleInit,
@@ -22,6 +23,7 @@ import type { RegisterWithContext } from './dto/register-with-context.dto';
 import { UserTokensDto } from './dto/user-tokens.dto';
 import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
 import { computePlatformAccessOpen } from '../platform-access.util';
+import { buildTwoFactorChallenge } from '../two-factor/two-factor-methods.util';
 
 @Injectable()
 export class CredentialsService implements OnModuleInit {
@@ -41,11 +43,28 @@ export class CredentialsService implements OnModuleInit {
     await this.userService.connect();
   }
 
+  private async loadUserByEmail(email: string): Promise<AuthUserView | null> {
+    try {
+      return await this.userService.sendAndReturnPromise<AuthUserView>(
+        UserQuery.GET_BY_EMAIL,
+        { email },
+      );
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        (err as { status?: number })?.status === 403 ||
+        String((err as Error)?.message ?? '').includes('unavailable')
+      ) {
+        throw new BadRequestException(
+          'Sign-in is unavailable for these credentials',
+        );
+      }
+      return null;
+    }
+  }
+
   async emailLogin(command: LoginWithContext): Promise<UserTokensDto> {
-    const user = (await this.userService.sendAndReturnPromise<AuthUserView>(
-      UserQuery.GET_BY_EMAIL,
-      { email: command.email },
-    )) as AuthUserView | null;
+    const user = await this.loadUserByEmail(command.email);
 
     if (!user) {
       throw new BadRequestException('Invalid credentials');
@@ -77,9 +96,14 @@ export class CredentialsService implements OnModuleInit {
         sessionId: session.id,
       });
     }
+
     const tokens = await this.authService.generateTokens({
       sessionId: session.id,
     });
+    const twoFactorChallenge = buildTwoFactorChallenge({
+      twoFactorEnabled: user.twoFactorEnabled,
+    });
+
     return {
       user: mapAuthUserViewToAuthUserDto(user),
       is2faEnabled: user.twoFactorEnabled,
@@ -89,6 +113,7 @@ export class CredentialsService implements OnModuleInit {
         twoFactorEnabled: user.twoFactorEnabled,
         twoFactorVerifiedAt: session.twoFactorVerifiedAt,
       }),
+      twoFactorChallenge,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
@@ -127,6 +152,7 @@ export class CredentialsService implements OnModuleInit {
         twoFactorEnabled: user.twoFactorEnabled,
         twoFactorVerifiedAt: session.twoFactorVerifiedAt,
       }),
+      twoFactorChallenge: null,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
