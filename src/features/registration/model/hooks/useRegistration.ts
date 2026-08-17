@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { setAccessToken, useToast } from "@ross2p/shared/hooks";
 import type { CreateUserType } from "@ross2p/types";
+import { redirectToNextAuthStep } from "@entities/session";
 import { register } from "../../api/register";
 
 export const useRegistration = () => {
@@ -11,10 +12,16 @@ export const useRegistration = () => {
 
   return useMutation({
     mutationFn: (dto: CreateUserType) => register(dto),
-    onSuccess: (data) => {
-      setAccessToken(data.data.accessToken.token);
+    onSuccess: (response) => {
+      const token = response.data.accessToken.token;
+      setAccessToken(token);
       void queryClient.invalidateQueries({ queryKey: ["me"] });
-      toaster.success(data.message);
+      toaster.success(response.message);
+      redirectToNextAuthStep(
+        token,
+        { platformAccessOpen: response.data.platformAccessOpen },
+        "verifyEmail",
+      );
     },
     onError: (err: Error) => {
       toaster.error(err.message);

@@ -9,9 +9,6 @@ export const useForgotPassword = () => {
 
   return useMutation({
     mutationFn: (dto: { email: string }) => forgotPassword(dto),
-    onSuccess: () => {
-      toaster.success("If that email is registered, a reset link has been sent");
-    },
     onError: (err: Error) => {
       toaster.error(err.message);
     },

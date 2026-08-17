@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { setAccessToken, useToast } from "@ross2p/shared/hooks";
 import type { LoginType } from "@ross2p/types";
+import { redirectToNextAuthStep } from "@entities/session";
+import { persistTwoFactorChallenge } from "@features/two-factor-challenge/lib/challenge-methods";
 import { login } from "../../api/login";
 
 export const useLogin = () => {
@@ -11,10 +13,15 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (dto: LoginType) => login(dto),
-    onSuccess: (data) => {
-      setAccessToken(data.data.accessToken.token);
+    onSuccess: (response) => {
+      const token = response.data.accessToken.token;
+      setAccessToken(token);
+      persistTwoFactorChallenge(response.data.twoFactorChallenge);
       void queryClient.invalidateQueries({ queryKey: ["me"] });
-      toaster.success(data.message);
+      toaster.success(response.message);
+      redirectToNextAuthStep(token, {
+        platformAccessOpen: response.data.platformAccessOpen,
+      });
     },
     onError: (err: Error & { status?: number }) => {
       const message = err.message ?? "Sign-in failed";

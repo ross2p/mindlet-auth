@@ -75,90 +75,79 @@ export const ChangePasswordForm = () => {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Change password
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Confirm your current password. All sessions will be signed out.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <Controller
+        name="currentPassword"
+        control={control}
+        render={({ field }) => (
+          <FormItem
+            label="Current password"
+            validateStatus={errors.currentPassword ? "error" : undefined}
+            help={errors.currentPassword?.message}
+          >
+            <Input {...field} type="password" autoComplete="current-password" />
+          </FormItem>
+        )}
+      />
+      <Controller
+        name="newPassword"
+        control={control}
+        render={({ field }) => (
+          <FormItem
+            label="New password"
+            validateStatus={errors.newPassword ? "error" : undefined}
+            help={errors.newPassword?.message}
+          >
+            <Input {...field} type="password" autoComplete="new-password" />
+          </FormItem>
+        )}
+      />
+      <Controller
+        name="confirmPassword"
+        control={control}
+        render={({ field }) => (
+          <FormItem
+            label="Confirm new password"
+            validateStatus={errors.confirmPassword ? "error" : undefined}
+            help={errors.confirmPassword?.message}
+          >
+            <Input {...field} type="password" autoComplete="new-password" />
+          </FormItem>
+        )}
+      />
+      <Controller
+        name="twoFactorCode"
+        control={control}
+        render={({ field }) => (
+          <FormItem
+            label="2FA code (if enabled)"
+            help="Request a code first if your account has 2FA on"
+          >
+            <Input {...field} inputMode="numeric" autoComplete="one-time-code" />
+          </FormItem>
+        )}
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-        <Controller
-          name="currentPassword"
-          control={control}
-          render={({ field }) => (
-            <FormItem
-              label="Current password"
-              validateStatus={errors.currentPassword ? "error" : undefined}
-              help={errors.currentPassword?.message}
-            >
-              <Input {...field} type="password" autoComplete="current-password" />
-            </FormItem>
-          )}
-        />
-        <Controller
-          name="newPassword"
-          control={control}
-          render={({ field }) => (
-            <FormItem
-              label="New password"
-              validateStatus={errors.newPassword ? "error" : undefined}
-              help={errors.newPassword?.message}
-            >
-              <Input {...field} type="password" autoComplete="new-password" />
-            </FormItem>
-          )}
-        />
-        <Controller
-          name="confirmPassword"
-          control={control}
-          render={({ field }) => (
-            <FormItem
-              label="Confirm new password"
-              validateStatus={errors.confirmPassword ? "error" : undefined}
-              help={errors.confirmPassword?.message}
-            >
-              <Input {...field} type="password" autoComplete="new-password" />
-            </FormItem>
-          )}
-        />
-        <Controller
-          name="twoFactorCode"
-          control={control}
-          render={({ field }) => (
-            <FormItem
-              label="2FA code (if enabled)"
-              help="Request a code first if your account has 2FA on"
-            >
-              <Input {...field} inputMode="numeric" autoComplete="one-time-code" />
-            </FormItem>
-          )}
-        />
+      <Button
+        htmlType="button"
+        type="default"
+        size="large"
+        loading={isSending2fa}
+        block
+        onClick={() => request2fa()}
+      >
+        Send 2FA code
+      </Button>
 
-        <Button
-          htmlType="button"
-          type="default"
-          size="large"
-          loading={isSending2fa}
-          block
-          onClick={() => request2fa()}
-        >
-          Send 2FA code
-        </Button>
-
-        <Button
-          htmlType="submit"
-          type="primary"
-          size="large"
-          loading={isPending}
-          block
-        >
-          Update password
-        </Button>
-      </form>
-    </div>
+      <Button
+        htmlType="submit"
+        type="primary"
+        size="large"
+        loading={isPending}
+        block
+      >
+        Update password
+      </Button>
+    </form>
   );
 };

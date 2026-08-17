@@ -1,3 +1,5 @@
+import type { TwoFactorChallengeType } from "@ross2p/types";
+
 /**
  * Shape of the decoded access token payload returned by the backend.
  * Keep in sync with AccessTokenPayload in libs/shared/src/api/auth/refresh.ts.
@@ -45,10 +47,7 @@ export type AuthTokensData = {
   is2faEnabled: boolean;
   sessionId?: string;
   platformAccessOpen?: boolean;
-  twoFactorChallenge?: {
-    required: boolean;
-    methods: Array<{ id: string; available: boolean }>;
-  } | null;
+  twoFactorChallenge?: TwoFactorChallengeType | null;
   accessToken: TokenDto;
   refreshToken: TokenDto;
 };

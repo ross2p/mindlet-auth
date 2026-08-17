@@ -1,21 +1,19 @@
-export type TwoFactorMethodId = "email" | "totp" | "backup";
+import type {
+  TwoFactorChallengeType,
+  TwoFactorMethodId,
+  TwoFactorMethodType,
+} from "@ross2p/types";
 
-export type TwoFactorMethodOption = {
-  id: TwoFactorMethodId;
-  available: boolean;
-};
-
-export type TwoFactorChallengeSnapshot = {
-  required: boolean;
-  methods: TwoFactorMethodOption[];
-};
+export type { TwoFactorMethodId, TwoFactorChallengeType };
+export type TwoFactorMethodOption = TwoFactorMethodType;
+export type TwoFactorChallengeSnapshot = TwoFactorChallengeType;
 
 const STORAGE_KEY = "mindlet.auth.twoFactorChallenge";
 
 const LABELS: Record<TwoFactorMethodId, string> = {
-  email: "Email code",
-  totp: "Authenticator app",
-  backup: "Backup code",
+  email: "Email",
+  totp: "Authenticator",
+  backup: "Backup",
 };
 
 export function methodLabel(id: TwoFactorMethodId): string {
@@ -23,7 +21,7 @@ export function methodLabel(id: TwoFactorMethodId): string {
 }
 
 export function persistTwoFactorChallenge(
-  challenge: TwoFactorChallengeSnapshot | null | undefined,
+  challenge: TwoFactorChallengeType | null | undefined,
 ): void {
   if (typeof window === "undefined") return;
   if (!challenge?.required) {
@@ -33,18 +31,18 @@ export function persistTwoFactorChallenge(
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(challenge));
 }
 
-export function readTwoFactorChallenge(): TwoFactorChallengeSnapshot | null {
+export function readTwoFactorChallenge(): TwoFactorChallengeType | null {
   if (typeof window === "undefined") return null;
   const raw = sessionStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as TwoFactorChallengeSnapshot;
+    return JSON.parse(raw) as TwoFactorChallengeType;
   } catch {
     return null;
   }
 }
 
-export function defaultChallengeMethods(): TwoFactorMethodOption[] {
+export function defaultChallengeMethods(): TwoFactorMethodType[] {
   return [
     { id: "email", available: true },
     { id: "totp", available: false },
