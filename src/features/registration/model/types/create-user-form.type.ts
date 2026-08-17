@@ -1,6 +1,6 @@
-import type { CreateUserDto } from "@ross2p/types";
+import type { CreateUserType } from "@ross2p/types";
 
-/** Extends CreateUserDto with a UI-only confirmPassword field (not sent to the API). */
-export type CreateUserFormDto = CreateUserDto & {
+/** Extends CreateUserType with a UI-only confirmPassword field (not sent to the API). */
+export type CreateUserFormDto = CreateUserType & {
   confirmPassword: string;
 };

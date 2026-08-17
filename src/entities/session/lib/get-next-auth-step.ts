@@ -2,16 +2,26 @@ import type { AccessPayload } from "./types";
 
 export type AuthStep = "twoFactor" | "verifyEmail" | "dashboard";
 
+export type AuthGateHints = {
+  /** Derived gate from auth API (preferred when present). */
+  platformAccessOpen?: boolean;
+};
+
 /**
  * Determines the next navigation step after a successful auth action
- * (login, 2FA verify, email verify) based on the access token payload.
+ * (login, register, 2FA verify, email verify).
  *
- * Logic mirrors the backend (credentials.service.ts):
- *  - twoFactorVerifiedAt is null  → 2FA challenge is pending
- *  - emailVerifiedAt is null      → email verification is pending
- *  - both present                 → user is fully authenticated → dashboard
+ * Prefers `platformAccessOpen` from the API when provided; otherwise mirrors
+ * backend Session gates via access-token claims.
  */
-export function getNextAuthStep(payload: AccessPayload): AuthStep {
+export function getNextAuthStep(
+  payload: AccessPayload,
+  hints: AuthGateHints = {},
+): AuthStep {
+  if (hints.platformAccessOpen === true) {
+    return "dashboard";
+  }
+
   if (payload.twoFactorVerifiedAt == null) {
     return "twoFactor";
   }

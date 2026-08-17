@@ -1,5 +1,5 @@
-import { type CreateUserDto } from "@ross2p/types";
+import { type CreateUserType } from "@ross2p/types";
 
-export type CreateUserFormDto = CreateUserDto & {
+export type CreateUserFormDto = CreateUserType & {
     confirmPassword: string;
 }

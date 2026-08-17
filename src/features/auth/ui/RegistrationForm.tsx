@@ -3,7 +3,7 @@
 import { joiResolver } from "@hookform/resolvers/joi";
 import { Controller, useForm } from "react-hook-form";
 import { useRegistration } from "../model/hooks/useRegistration";
-import { Button, Input } from "@ross2p/shared";
+import { Button, FormItem, Input } from "@ross2p/shared";
 import { CreateUserFormDto } from "../model/types/create-user-form.type";
 import { createUserFormSchema } from "../model/schemas/create-user-form.schema";
 
@@ -28,93 +28,111 @@ export const RegistrationForm = () => {
         name="firstName"
         control={control}
         render={({ field }) => (
-          <Input
-            {...field}
-            value={field.value ?? ""}
+          <FormItem
             label="First Name"
-            type="text"
-            error={!!errors.firstName}
-            helperText={errors.firstName?.message}
-            disabled={isPending}
-          />
+            validateStatus={errors.firstName ? "error" : undefined}
+            help={errors.firstName?.message}
+          >
+            <Input
+              {...field}
+              value={field.value ?? ""}
+              type="text"
+              disabled={isPending}
+            />
+          </FormItem>
         )}
       />
       <Controller
         name="lastName"
         control={control}
         render={({ field }) => (
-          <Input
-            {...field}
-            value={field.value ?? ""}
+          <FormItem
             label="Last Name"
-            type="text"
-            error={!!errors.lastName}
-            helperText={errors.lastName?.message}
-            disabled={isPending}
-          />
+            validateStatus={errors.lastName ? "error" : undefined}
+            help={errors.lastName?.message}
+          >
+            <Input
+              {...field}
+              value={field.value ?? ""}
+              type="text"
+              disabled={isPending}
+            />
+          </FormItem>
         )}
       />
       <Controller
         name="email"
         control={control}
         render={({ field }) => (
-          <Input
-            {...field}
-            value={field.value ?? ""}
+          <FormItem
             label="Email"
-            type="email"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-            disabled={isPending}
-          />
+            validateStatus={errors.email ? "error" : undefined}
+            help={errors.email?.message}
+          >
+            <Input
+              {...field}
+              value={field.value ?? ""}
+              type="email"
+              disabled={isPending}
+            />
+          </FormItem>
         )}
       />
       <Controller
         name="password"
         control={control}
         render={({ field }) => (
-          <Input
-            {...field}
-            value={field.value ?? ""}
+          <FormItem
             label="Password"
-            type="password"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            disabled={isPending}
-          />
+            validateStatus={errors.password ? "error" : undefined}
+            help={errors.password?.message}
+          >
+            <Input
+              {...field}
+              value={field.value ?? ""}
+              type="password"
+              disabled={isPending}
+            />
+          </FormItem>
         )}
       />
       <Controller
         name="confirmPassword"
         control={control}
         render={({ field }) => (
-          <Input
-            {...field}
-            value={field.value ?? ""}
+          <FormItem
             label="Confirm Password"
-            type="password"
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword?.message}
-            disabled={isPending}
-          />
+            validateStatus={errors.confirmPassword ? "error" : undefined}
+            help={errors.confirmPassword?.message}
+          >
+            <Input
+              {...field}
+              value={field.value ?? ""}
+              type="password"
+              disabled={isPending}
+            />
+          </FormItem>
         )}
       />
       <Controller
         name="phoneNumber"
         control={control}
         render={({ field }) => (
-          <Input
-            {...field}
-            value={field.value ?? ""}
+          <FormItem
             label="Phone"
-            type="tel"
-            error={!!errors.phoneNumber}
-            helperText={errors.phoneNumber?.message}
-            disabled={isPending}
-          />
+            validateStatus={errors.phoneNumber ? "error" : undefined}
+            help={errors.phoneNumber?.message}
+          >
+            <Input
+              {...field}
+              value={field.value ?? ""}
+              type="tel"
+              disabled={isPending}
+            />
+          </FormItem>
         )}
       />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <Button htmlType="submit" type="primary" size="large" disabled={isPending}>
         {isPending ? "Loading... " : "Login"}
       </Button>
     </form>

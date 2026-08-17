@@ -1,25 +1,26 @@
 FROM node:22-alpine AS builder
-WORKDIR /workspace/apps/auth
+WORKDIR /app
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV HUSKY=0
 
-COPY libs /workspace/libs
-COPY apps/auth/package.json apps/auth/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY apps/auth/ .
+COPY . .
+
 RUN npm run build
 
 FROM node:22-alpine AS app
-WORKDIR /workspace/apps/auth
+WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /workspace/apps/auth/.next ./.next
-COPY --from=builder /workspace/apps/auth/public ./public
-COPY --from=builder /workspace/apps/auth/node_modules ./node_modules
-COPY apps/auth/package.json ./
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
 
-EXPOSE 3002
-CMD ["npm", "run", "start"]
+EXPOSE 3000
+CMD ["npx", "next", "start", "-p", "3000"]
