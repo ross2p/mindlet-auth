@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import { Input, Button, FormItem } from "@ross2p/shared";
-import { routes } from "@ross2p/shared";
 import Joi from "joi";
 import {
   useChangePassword,
@@ -37,10 +35,9 @@ const schema = Joi.object<FormValues>({
 });
 
 export const ChangePasswordForm = () => {
-  const { mutate: changePassword, isPending } = useChangePassword();
+  const { mutate: changePassword, isPending, isSuccess } = useChangePassword();
   const { mutate: request2fa, isPending: isSending2fa } =
     useRequestChangePassword2fa();
-  const [done, setDone] = useState(false);
 
   const {
     handleSubmit,
@@ -50,23 +47,11 @@ export const ChangePasswordForm = () => {
     resolver: joiResolver(schema),
   });
 
-  const onSubmit = (values: FormValues) => {
-    changePassword(
-      {
-        currentPassword: values.currentPassword,
-        newPassword: values.newPassword,
-        twoFactorCode: values.twoFactorCode || null,
-      },
-      {
-        onSuccess: () => {
-          setDone(true);
-          window.location.href = routes.login;
-        },
-      },
-    );
+  const onSubmit = ({ confirmPassword: _, ...dto }: FormValues) => {
+    changePassword(dto);
   };
 
-  if (done) {
+  if (isSuccess) {
     return (
       <p className="text-sm text-muted-foreground text-center">
         Password updated. Redirecting to sign in…
