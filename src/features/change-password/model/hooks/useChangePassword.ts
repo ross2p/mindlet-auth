@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@ross2p/shared/hooks";
-import { clearAccessToken } from "@ross2p/shared";
+import { clearAccessToken, routes } from "@ross2p/shared";
 import { changePassword, requestChangePassword2fa } from "../../api/change-password";
 import type { ChangePasswordDto } from "../../api/change-password";
 
@@ -14,6 +14,7 @@ export const useChangePassword = () => {
     onSuccess: () => {
       clearAccessToken();
       toaster.success("Password changed — please sign in again");
+      window.location.href = routes.login;
     },
     onError: (err: Error) => {
       toaster.error(err.message);
