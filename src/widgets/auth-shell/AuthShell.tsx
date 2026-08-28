@@ -1,6 +1,7 @@
 "use client";
 
 import type { PropsWithChildren } from "react";
+import { SignOutButton } from "@ross2p/shared";
 
 /** Brand logotype — displayed above the card. */
 const Logo = () => (
@@ -52,6 +53,9 @@ export const AuthShell = ({ children }: PropsWithChildren) => {
       {/* Content */}
       <div className="relative z-10 w-full max-w-md animate-auth-card">
         <Logo />
+        <div className="mb-3 flex justify-end">
+          <SignOutButton />
+        </div>
         <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-xl shadow-xl px-8 py-10">
           {children}
         </div>

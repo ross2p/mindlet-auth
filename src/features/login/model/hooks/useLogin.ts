@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { setAccessToken, useToast } from "@ross2p/shared/hooks";
+import { persistSessionTokens, useToast } from "@ross2p/shared/hooks";
 import type { LoginType } from "@ross2p/types";
 import { redirectToNextAuthStep } from "@entities/session";
 import { persistTwoFactorChallenge } from "@features/two-factor-challenge/lib/challenge-methods";
@@ -15,7 +15,10 @@ export const useLogin = () => {
     mutationFn: (dto: LoginType) => login(dto),
     onSuccess: (response) => {
       const token = response.data.accessToken.token;
-      setAccessToken(token);
+      persistSessionTokens({
+        accessToken: token,
+        refreshToken: response.data.refreshToken.token,
+      });
       persistTwoFactorChallenge(response.data.twoFactorChallenge);
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       toaster.success(response.message);
