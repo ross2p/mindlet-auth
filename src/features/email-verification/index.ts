@@ -2,6 +2,7 @@ export {
   verifyEmailCode,
   resendEmailVerificationCode,
   type VerifyEmailResponse,
+  type ResendEmailCodeResponse,
 } from "./api/email-verification";
 export { useVerifyEmail } from "./model/hooks/useVerifyEmail";
 export { useResendEmailCode } from "./model/hooks/useResendEmailCode";

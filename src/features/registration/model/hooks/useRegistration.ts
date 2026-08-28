@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { setAccessToken, useToast } from "@ross2p/shared/hooks";
+import { persistSessionTokens, useToast } from "@ross2p/shared/hooks";
 import type { CreateUserType } from "@ross2p/types";
 import { redirectToNextAuthStep } from "@entities/session";
 import { register } from "../../api/register";
@@ -14,7 +14,9 @@ export const useRegistration = () => {
     mutationFn: (dto: CreateUserType) => register(dto),
     onSuccess: (response) => {
       const token = response.data.accessToken.token;
-      setAccessToken(token);
+      persistSessionTokens({
+        accessToken: token,
+      });
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       toaster.success(response.message);
       redirectToNextAuthStep(

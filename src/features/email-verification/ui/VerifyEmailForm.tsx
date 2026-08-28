@@ -8,13 +8,14 @@ import { useResendEmailCode } from "../model/hooks/useResendEmailCode";
 
 export const VerifyEmailForm = () => {
   const [code, setCode] = useState("");
+  const [challengeId, setChallengeId] = useState<string | null>(null);
   const { mutate: verify, isPending } = useVerifyEmail();
   const { mutate: resend, isPending: isResending } = useResendEmailCode();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.length !== 6) return;
-    verify({ code });
+    if (!challengeId || code.length !== 6) return;
+    verify({ id: challengeId, code });
   };
 
   return (
@@ -30,7 +31,7 @@ export const VerifyEmailForm = () => {
           size="large"
           loading={isPending}
           block
-          disabled={code.length !== 6}
+          disabled={!challengeId || code.length !== 6}
           className="transition-all hover:shadow-brand hover:-translate-y-0.5 active:translate-y-0 disabled:translate-y-0"
         >
           {isPending ? "Verifying…" : "Verify email"}
@@ -39,7 +40,13 @@ export const VerifyEmailForm = () => {
 
       <div className="animate-field animate-field-3">
         <ResendCountdownButton
-          onResend={() => resend()}
+          onResend={() =>
+            resend(undefined, {
+              onSuccess: (response) => {
+                setChallengeId(response.data.id);
+              },
+            })
+          }
           isPending={isResending}
           startWithCooldown
         />

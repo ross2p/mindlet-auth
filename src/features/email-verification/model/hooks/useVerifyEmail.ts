@@ -10,7 +10,7 @@ export const useVerifyEmail = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (dto: { code: string }) => verifyEmailCode(dto),
+    mutationFn: (dto: { id: string; code: string }) => verifyEmailCode(dto),
     onSuccess: (data) => {
       const token = data.data.token;
       setAccessToken(token);
