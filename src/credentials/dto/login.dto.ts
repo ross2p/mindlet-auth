@@ -5,13 +5,13 @@ export class LoginDto implements LoginType {
   @ApiProperty({
     description: 'Account email address',
     format: 'email',
-    example: 'user@example.com',
+    example: 'user-a1b2@example.test',
   })
   email!: string;
 
   @ApiProperty({
     description: 'Account password',
-    example: 'P@ssw0rd!',
+    example: 'Passw0rd1',
   })
   password!: string;
 }

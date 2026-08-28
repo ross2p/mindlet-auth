@@ -88,6 +88,15 @@ export class SessionService {
     return this.sessionRepository.updateSession(sessionId, updateSessionDto);
   }
 
+  async persistRefreshTokenHash(
+    sessionId: string,
+    refreshToken: string,
+  ): Promise<SessionEntity> {
+    return this.updateSession(sessionId, {
+      refreshTokenHash: sha256Hex(refreshToken),
+    });
+  }
+
   async updateTwoFactorVerifiedAt(
     sessionId: string,
     twoFactorVerifiedAt: Date,
@@ -134,15 +143,21 @@ export class SessionService {
     }
   }
 
-  async signOutAll(userId: string): Promise<void> {
+  async signOutAll(
+    userId: string,
+    reason:
+      | 'sign-out-all'
+      | 'password-reset'
+      | 'password-change' = 'sign-out-all',
+  ): Promise<void> {
     await this.bulkUpdateSessions(userId, {
       revokedAt: new Date(),
-      revokedReason: 'sign-out-all',
+      revokedReason: reason,
     });
     this.userEventClient.emitEvent(AuthEvent.SESSION_ENDED, {
       userId,
       sessionId: 'all',
-      reason: 'sign-out-all',
+      reason,
       at: new Date().toISOString(),
     });
   }

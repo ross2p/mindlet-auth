@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   OnModuleInit,
@@ -21,6 +21,10 @@ import type { LoginWithContext } from './dto/login-with-context.dto';
 import type { RegisterWithContext } from './dto/register-with-context.dto';
 import { UserTokensDto } from './dto/user-tokens.dto';
 import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
+import { computePlatformAccessOpen } from '../platform-access.util';
+import { buildTwoFactorChallenge } from '../two-factor/two-factor-methods.util';
+import { sessionExpiresAt } from '../auth-challenge.constants';
+import { AuthErrorCode, throwAuthUnauthorized } from '../auth-exception';
 
 @Injectable()
 export class CredentialsService implements OnModuleInit {
@@ -40,14 +44,35 @@ export class CredentialsService implements OnModuleInit {
     await this.userService.connect();
   }
 
+  private async loadUserByEmail(email: string): Promise<AuthUserView | null> {
+    try {
+      return await this.userService.sendAndReturnPromise<AuthUserView>(
+        UserQuery.GET_BY_EMAIL,
+        { email },
+      );
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        (err as { status?: number })?.status === 403 ||
+        String((err as Error)?.message ?? '').includes('unavailable')
+      ) {
+        throwAuthUnauthorized(
+          AuthErrorCode.signInUnavailable,
+          'Sign-in is unavailable for these credentials',
+        );
+      }
+      return null;
+    }
+  }
+
   async emailLogin(command: LoginWithContext): Promise<UserTokensDto> {
-    const user = (await this.userService.sendAndReturnPromise<AuthUserView>(
-      UserQuery.GET_BY_EMAIL,
-      { email: command.email },
-    )) as AuthUserView | null;
+    const user = await this.loadUserByEmail(command.email);
 
     if (!user) {
-      throw new BadRequestException('Invalid credentials');
+      throwAuthUnauthorized(
+        AuthErrorCode.signInUnavailable,
+        'Sign-in is unavailable for these credentials',
+      );
     }
 
     const isPasswordValid: boolean = await this.userService
@@ -58,16 +83,20 @@ export class CredentialsService implements OnModuleInit {
       .catch((): boolean => false);
 
     if (!isPasswordValid) {
-      throw new BadRequestException('Invalid credentials');
+      throwAuthUnauthorized(
+        AuthErrorCode.signInUnavailable,
+        'Sign-in is unavailable for these credentials',
+      );
     }
 
+    const now = new Date();
     const session = await this.sessionService.createSession({
       userId: user.id,
       userAgent: command.userAgent,
       ipAddress: command.ipAddress,
       provider: SessionProvider.CREDENTIALS,
-      refreshAt: new Date(),
-      expiresAt: new Date(),
+      refreshAt: now,
+      expiresAt: sessionExpiresAt(now),
       twoFactorVerifiedAt: user.twoFactorEnabled ? null : new Date(),
     });
 
@@ -76,12 +105,24 @@ export class CredentialsService implements OnModuleInit {
         sessionId: session.id,
       });
     }
+
     const tokens = await this.authService.generateTokens({
       sessionId: session.id,
     });
+    const twoFactorChallenge = buildTwoFactorChallenge({
+      twoFactorEnabled: user.twoFactorEnabled,
+    });
+
     return {
       user: mapAuthUserViewToAuthUserDto(user),
       is2faEnabled: user.twoFactorEnabled,
+      sessionId: session.id,
+      platformAccessOpen: computePlatformAccessOpen({
+        emailVerifiedAt: user.emailVerifiedAt,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorVerifiedAt: session.twoFactorVerifiedAt,
+      }),
+      twoFactorChallenge,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
@@ -93,13 +134,14 @@ export class CredentialsService implements OnModuleInit {
       CreateUserDto
     >(UserMessage.CREATE, command);
 
+    const now = new Date();
     const session = await this.sessionService.createSession({
       userId: user.id,
       userAgent: command.userAgent,
       ipAddress: command.ipAddress,
       provider: SessionProvider.CREDENTIALS,
-      refreshAt: new Date(),
-      expiresAt: new Date(),
+      refreshAt: now,
+      expiresAt: sessionExpiresAt(now),
       twoFactorVerifiedAt: user.twoFactorEnabled ? null : new Date(),
     });
 
@@ -114,6 +156,13 @@ export class CredentialsService implements OnModuleInit {
     return {
       user: mapAuthUserViewToAuthUserDto(user),
       is2faEnabled: user.twoFactorEnabled,
+      sessionId: session.id,
+      platformAccessOpen: computePlatformAccessOpen({
+        emailVerifiedAt: user.emailVerifiedAt,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorVerifiedAt: session.twoFactorVerifiedAt,
+      }),
+      twoFactorChallenge: null,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };

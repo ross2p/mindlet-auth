@@ -11,6 +11,7 @@ import type { AuthUserView } from './dto/auth-user.view';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenPayloadDto } from './dto/token-payload.dto';
 import { TokensDto } from './dto/tokens.dto';
+import { assertRefreshAllowed } from './refresh-gate.util';
 
 @Injectable()
 export class AuthService {
@@ -59,18 +60,44 @@ export class AuthService {
       payload.sessionId,
       dto.refreshToken,
     );
+
+    const user = await this.userService.sendAndReturnPromise<
+      AuthUserView,
+      { userId: string }
+    >(UserQuery.GET_BY_ID, { userId: session.userId });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    assertRefreshAllowed({
+      emailVerifiedAt: user.emailVerifiedAt,
+      twoFactorEnabled: user.twoFactorEnabled,
+      twoFactorVerifiedAt: session.twoFactorVerifiedAt,
+    });
+
     await this.sessionService.updateLastUsedAt(payload.sessionId);
-    return this.refreshAccessTokenBySessionId(payload.sessionId);
+    // OpenAPI returns access only — keep the login-issued refresh hash.
+    return this.refreshAccessTokenBySessionId(payload.sessionId, {
+      persistRefresh: false,
+    });
   }
 
   async refreshAccessTokenBySessionId(
     sessionId: string,
+    options?: { persistRefresh?: boolean },
   ): Promise<TokenPayloadDto> {
-    const { accessToken } = await this.generateTokens({ sessionId });
+    const { accessToken } = await this.generateTokens({
+      sessionId,
+      persistRefresh: options?.persistRefresh ?? false,
+    });
     return accessToken;
   }
 
-  async generateTokens(params: { sessionId: string }): Promise<TokensDto> {
+  async generateTokens(params: {
+    sessionId: string;
+    persistRefresh?: boolean;
+  }): Promise<TokensDto> {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       params.sessionId,
     );
@@ -85,7 +112,7 @@ export class AuthService {
 
     const pendingVerification = user.emailVerifiedAt == null;
 
-    return this.userTokenService.generateTokens({
+    const tokens = this.userTokenService.generateTokens({
       id: user.id,
       email: user.email,
       sessionId: session.id,
@@ -93,5 +120,12 @@ export class AuthService {
       emailVerifiedAt: user.emailVerifiedAt,
       pendingVerification,
     });
+    if (params.persistRefresh !== false) {
+      await this.sessionService.persistRefreshTokenHash(
+        session.id,
+        tokens.refreshToken.token,
+      );
+    }
+    return tokens;
   }
 }

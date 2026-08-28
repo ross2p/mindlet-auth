@@ -11,24 +11,21 @@ export interface CacheModuleOptions {
 @Injectable()
 export class CacheService implements OnModuleDestroy {
   private readonly logger = new Logger(this.constructor.name);
-  private readonly redis: Redis | null;
+  private readonly client: Redis;
   private readonly prefix: string;
   private readonly defaultTtl: number;
 
   constructor(options: CacheModuleOptions) {
+    if (!options.redisUrl) {
+      throw new Error('REDIS_URL is required');
+    }
     this.prefix = options.prefix;
     this.defaultTtl = options.defaultTtlSeconds ?? 3600;
-
-    if (!options.redisUrl) {
-      this.logger.warn('REDIS_URL not set — cache operations are no-ops');
-      this.redis = null;
-    } else {
-      this.redis = new Redis(options.redisUrl, { maxRetriesPerRequest: 2 });
-    }
+    this.client = new Redis(options.redisUrl, { maxRetriesPerRequest: 2 });
   }
 
   async onModuleDestroy() {
-    await this.redis?.quit();
+    await this.client.quit();
   }
 
   private getKey(key: string): string {
@@ -36,8 +33,7 @@ export class CacheService implements OnModuleDestroy {
   }
 
   async get<T>(key: string, schema?: ObjectSchema<T>): Promise<T | null> {
-    if (!this.redis) return null;
-    const raw = await this.redis.get(this.getKey(key));
+    const raw = await this.client.get(this.getKey(key));
     if (raw == null) return null;
     let parsed: unknown;
     try {
@@ -66,20 +62,17 @@ export class CacheService implements OnModuleDestroy {
     k: string,
     schema?: ObjectSchema<T>,
   ): Promise<{ value: T | null; ttl: number }> {
-    if (!this.redis) return { value: null, ttl: 0 };
     const row = await this.get<T>(k, schema);
     if (row == null) return { value: null, ttl: 0 };
-    return { value: row, ttl: await this.redis.ttl(this.getKey(k)) };
+    return { value: row, ttl: await this.client.ttl(this.getKey(k)) };
   }
 
   async set<T>(k: string, value: T, ttlSeconds?: number): Promise<void> {
-    if (!this.redis) return;
     const ttl = ttlSeconds ?? this.defaultTtl;
-    await this.redis.setex(this.getKey(k), ttl, JSON.stringify(value));
+    await this.client.setex(this.getKey(k), ttl, JSON.stringify(value));
   }
 
   async delete(k: string): Promise<void> {
-    if (!this.redis) return;
-    await this.redis.del(this.getKey(k));
+    await this.client.del(this.getKey(k));
   }
 }

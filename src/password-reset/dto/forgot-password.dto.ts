@@ -5,6 +5,7 @@ export class ForgotPasswordDto implements ForgotPasswordType {
   @ApiProperty({
     description: 'Account email to send a password reset link to',
     format: 'email',
+    example: 'user-a1b2@example.test',
   })
   email!: string;
 }
