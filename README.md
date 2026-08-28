@@ -57,7 +57,7 @@ docker compose up --build auth
 ## Architecture conventions
 
 - `DatabaseService` / `CacheService` only in `*.repository.ts`.
-- Every HTTP endpoint has `@ResponseMessage('…')`.
+- Every HTTP endpoint has `@ResponseMessage('…')` on **gateway-web**. This app is Kafka-only (ADR-0004).
 - Use `@ClientInfo()`, `@IsPublic()`, `checkExists(...)` from `@ross2p/common`.
 - TTL / rate-limit constants in `auth-challenge.constants.ts` (+ module re-exports).
 - Throttler uses Redis-backed storage (`src/throttling/redis-throttler.storage.ts`) when `REDIS_URL` is set.

@@ -4,9 +4,11 @@
 >
 > Product contract: [`docs/features/auth/contracts/openapi.yaml`](../../../../docs/features/auth/contracts/openapi.yaml)
 
-HTTP routes are mounted under **`/api/v1/auth`** (global prefix `/api` + URI versioning `v1` from `@ross2p/common`, plus router `path: 'auth'` in [`app.module.ts`](../src/app.module.ts)).
+HTTP for Guests/Users is **not** served from this process (ADR-0004). Canonical REST lives on **gateway-web** under `/api/v1/auth`. This service exposes **Kafka `AuthMessage`** only.
 
-## REST endpoints
+The table below is the public HTTP surface (gateway-web). Handler files in this repo are Kafka `*MessageController`s plus leftover HTTP controller sources that are **not** registered on `AppModule`.
+
+## REST endpoints (gateway-web)
 
 | Method | Path | Handler | Auth | Status |
 |--------|------|---------|------|--------|
@@ -26,7 +28,7 @@ HTTP routes are mounted under **`/api/v1/auth`** (global prefix `/api` + URI ver
 | `POST` | `/api/v1/auth/session/sign-out-all` | [`SessionController`](../src/session/session.controller.ts) | `AuthGuard` | **Shipped** — `204` |
 | `GET` | `/api/v1/auth/session` | [`SessionController`](../src/session/session.controller.ts) | `AuthGuard` | **As-built** — list sessions (UI ownership → profile-and-settings, ADR-0003) |
 | `DELETE` | `/api/v1/auth/session/:id` | [`SessionController`](../src/session/session.controller.ts) | `AuthGuard` | **As-built** — revoke one session (same boundary) |
-| `GET` / `POST` | `/api/v1/auth/google/...` | [`GoogleController`](../src/google/google.controller.ts) | TBD | **Scaffold only** — out of auth MVP scope |
+| `GET` / `POST` | `/api/v1/auth/google/...` | gateway-web Google module | TBD | **Scaffold only** — out of auth MVP scope |
 
 ## Response notes
 

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TwoFactorEnrollmentController } from './two-factor-enrollment.controller';
 import { TwoFactorEnrollmentMessageController } from './two-factor-enrollment-message.controller';
 import { TwoFactorEnrollmentService } from './two-factor-enrollment.service';
 import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repository';
@@ -8,10 +7,7 @@ import { CacheModule } from '../cache/cache.module';
 import { TWO_FACTOR_ENROLLMENT_TTL_SECONDS } from './two-factor-enrollment.constants';
 
 @Module({
-  controllers: [
-    TwoFactorEnrollmentController,
-    TwoFactorEnrollmentMessageController,
-  ],
+  controllers: [TwoFactorEnrollmentMessageController],
   providers: [TwoFactorEnrollmentService, TwoFactorEnrollmentRepository],
   imports: [
     ClientModule.register(Services.USER, Services.NOTIFICATION),

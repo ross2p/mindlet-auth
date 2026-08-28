@@ -5,8 +5,9 @@
  * When infrastructure env is missing (local agents without Docker), the suite
  * is skipped so CI unit jobs stay green; enable with AUTH_E2E=1 and full stack.
  *
- * AppModule is loaded dynamically only when e2e is enabled so skipped runs do
- * not pull Nest DI / peer packages.
+ * Canonical HTTP e2e for the auth AC matrix runs against **gateway-web**
+ * (ADR-0004), not this service. This file stays skipped unless AUTH_E2E=1
+ * with a full stack; prefer gateway-web/test when adding new HTTP cases.
  */
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';

@@ -77,17 +77,27 @@ export class AuthService {
     });
 
     await this.sessionService.updateLastUsedAt(payload.sessionId);
-    return this.refreshAccessTokenBySessionId(payload.sessionId);
+    // OpenAPI returns access only — keep the login-issued refresh hash.
+    return this.refreshAccessTokenBySessionId(payload.sessionId, {
+      persistRefresh: false,
+    });
   }
 
   async refreshAccessTokenBySessionId(
     sessionId: string,
+    options?: { persistRefresh?: boolean },
   ): Promise<TokenPayloadDto> {
-    const { accessToken } = await this.generateTokens({ sessionId });
+    const { accessToken } = await this.generateTokens({
+      sessionId,
+      persistRefresh: options?.persistRefresh ?? false,
+    });
     return accessToken;
   }
 
-  async generateTokens(params: { sessionId: string }): Promise<TokensDto> {
+  async generateTokens(params: {
+    sessionId: string;
+    persistRefresh?: boolean;
+  }): Promise<TokensDto> {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       params.sessionId,
     );
@@ -110,10 +120,12 @@ export class AuthService {
       emailVerifiedAt: user.emailVerifiedAt,
       pendingVerification,
     });
-    await this.sessionService.persistRefreshTokenHash(
-      session.id,
-      tokens.refreshToken.token,
-    );
+    if (params.persistRefresh !== false) {
+      await this.sessionService.persistRefreshTokenHash(
+        session.id,
+        tokens.refreshToken.token,
+      );
+    }
     return tokens;
   }
 }
