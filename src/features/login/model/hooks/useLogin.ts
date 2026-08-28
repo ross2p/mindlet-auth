@@ -17,7 +17,6 @@ export const useLogin = () => {
       const token = response.data.accessToken.token;
       persistSessionTokens({
         accessToken: token,
-        refreshToken: response.data.refreshToken.token,
       });
       persistTwoFactorChallenge(response.data.twoFactorChallenge);
       void queryClient.invalidateQueries({ queryKey: ["me"] });

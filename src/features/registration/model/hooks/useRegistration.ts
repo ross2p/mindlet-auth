@@ -16,7 +16,6 @@ export const useRegistration = () => {
       const token = response.data.accessToken.token;
       persistSessionTokens({
         accessToken: token,
-        refreshToken: response.data.refreshToken.token,
       });
       void queryClient.invalidateQueries({ queryKey: ["me"] });
       toaster.success(response.message);
