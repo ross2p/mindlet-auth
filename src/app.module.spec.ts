@@ -7,12 +7,17 @@ describe('AppModule (ADR-0004)', () => {
     expect(src).not.toMatch(/RouterModule/);
   });
 
-  it('does not register HTTP CredentialsController on the Kafka app', () => {
+  it('registers Kafka CredentialsController, not HTTP routes', () => {
+    const controller = readFileSync(
+      join(__dirname, 'credentials/credentials.controller.ts'),
+      'utf8',
+    );
+    expect(controller).toMatch(/MessagePattern/);
+    expect(controller).not.toMatch(/@Post\(/);
     const src = readFileSync(
       join(__dirname, 'credentials/credentials.module.ts'),
       'utf8',
     );
-    expect(src).not.toMatch(/from '\.\/credentials\.controller'/);
-    expect(src).toMatch(/CredentialsMessageController/);
+    expect(src).toMatch(/CredentialsController/);
   });
 });

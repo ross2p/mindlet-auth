@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyEmailMessageDto {
+  @ApiProperty({ description: 'Challenge identifier', format: 'uuid' })
+  id!: string;
+
   @ApiProperty({ description: 'User identifier', format: 'uuid' })
   userId!: string;
 

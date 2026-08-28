@@ -13,7 +13,14 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
     sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
   };
   const emailVerificationRepository = {
-    createEmailVerificationCode: jest.fn(),
+    createEmailVerificationCode: jest.fn().mockResolvedValue({
+      id: 'ev-1',
+      userId: 'u1',
+      code: '123456',
+      attempts: 0,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    }),
     findEmailVerificationCodeByUserId: jest.fn(),
     deleteEmailVerificationCode: jest.fn(),
   };
@@ -52,11 +59,20 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       emailVerifiedAt: null,
     });
 
-    await service.sendCode({ sessionId: 's1' });
+    const result = await service.sendCode({ sessionId: 's1' });
 
-    expect(
-      emailVerificationRepository.createEmailVerificationCode,
-    ).toHaveBeenCalledWith('u1', expect.stringMatching(/^\d{6}$/));
+    const [createArgs] = emailVerificationRepository.createEmailVerificationCode
+      .mock.calls[0] as [{ userId: string; code: string }];
+    expect(createArgs.userId).toBe('u1');
+    expect(createArgs.code).toMatch(/^\d{6}$/);
+    expect(result).toEqual({
+      id: 'ev-1',
+      userId: 'u1',
+      attempts: 0,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+    expect(result).not.toHaveProperty('code');
     expect(notificationClient.sendAndReturnPromise).toHaveBeenCalled();
   });
 
@@ -100,11 +116,12 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       emailVerifiedAt: null,
     });
     emailVerificationRepository.findEmailVerificationCodeByUserId.mockResolvedValue(
-      { code: '123456', attempts: 0 },
+      { code: '123456', id: 'ev-1', attempts: 0 },
     );
 
     await expect(
       service.checkCode({
+        id: 'ev-1',
         userId: 'u1',
         sessionId: 's1',
         email: 'user-a1b2@example.test',
@@ -121,10 +138,11 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       })
       .mockResolvedValueOnce({});
     emailVerificationRepository.findEmailVerificationCodeByUserId.mockResolvedValue(
-      { code: '123456', attempts: 0 },
+      { code: '123456', id: 'ev-1', attempts: 0 },
     );
 
     await service.checkCode({
+      id: 'ev-1',
       userId: 'u1',
       sessionId: 's1',
       email: 'user-a1b2@example.test',

@@ -6,16 +6,16 @@
 
 HTTP for Guests/Users is **not** served from this process (ADR-0004). Canonical REST lives on **gateway-web** under `/api/v1/auth`. This service exposes **Kafka `AuthMessage`** only.
 
-The table below is the public HTTP surface (gateway-web). Handler files in this repo are Kafka `*MessageController`s plus leftover HTTP controller sources that are **not** registered on `AppModule`.
+The table below is the public HTTP surface (gateway-web). Handler files in this service are Kafka `*MessageController`s.
 
 ## REST endpoints (gateway-web)
 
 | Method | Path | Handler | Auth | Status |
 |--------|------|---------|------|--------|
-| `POST` | `/api/v1/auth/credentials/register` | [`CredentialsController`](../src/credentials/credentials.controller.ts) | Public + throttle | **Shipped** — `201` `UserTokensDto` with `platformAccessOpen`, `sessionId`, `twoFactorChallenge: null`; email verify code sent |
-| `POST` | `/api/v1/auth/credentials/login` | [`CredentialsController`](../src/credentials/credentials.controller.ts) | Public + login throttle | **Shipped** — `200`; soft-deleted User → unavailable; 2FA → `twoFactorChallenge` picker on **same Session** |
-| `POST` | `/api/v1/auth/verify-email/verify` | [`EmailVerificationController`](../src/email-verification/email-verification.controller.ts) | `AuthGuard` + throttle | **Shipped** — marks email verified → new access JWT |
-| `POST` | `/api/v1/auth/verify-email/resend-code` | [`EmailVerificationController`](../src/email-verification/email-verification.controller.ts) | `AuthGuard` + throttle | **Shipped** — `204` |
+| `POST` | `/api/v1/auth/credentials/register` | [`CredentialsController`](../../gateway-web/src/modules/auth/credentials/credentials.controller.ts) | Public + throttle | **Shipped** — `201` `UserTokensDto` with `platformAccessOpen`, `sessionId`, `twoFactorChallenge: null`; email verify code sent |
+| `POST` | `/api/v1/auth/credentials/login` | [`CredentialsController`](../../gateway-web/src/modules/auth/credentials/credentials.controller.ts) | Public + login throttle | **Shipped** — `200`; soft-deleted User → unavailable; 2FA → `twoFactorChallenge` picker on **same Session** |
+| `POST` | `/api/v1/auth/verify-email/verify` | [`EmailVerificationController`](../../gateway-web/src/modules/auth/email-verification/email-verification.controller.ts) | `AuthGuard` + throttle | **Shipped** — marks email verified → new access JWT |
+| `POST` | `/api/v1/auth/verify-email/resend-code` | [`EmailVerificationController`](../../gateway-web/src/modules/auth/email-verification/email-verification.controller.ts) | `AuthGuard` + throttle | **Shipped** — `200` challenge payload without `code` |
 | `GET` | `/api/v1/auth/2fa/methods` | [`TwoFactorController`](../src/two-factor/two-factor.controller.ts) | `AuthGuard` | **Shipped** — `{ methods: [{ id, available }] }`; `409` when challenge not pending |
 | `POST` | `/api/v1/auth/2fa/verify` | [`TwoFactorController`](../src/two-factor/two-factor.controller.ts) | `AuthGuard` + throttle | **Shipped** — body `{ method, code }`; sets `Session.twoFactorVerifiedAt` |
 | `POST` | `/api/v1/auth/2fa/resend-code` | [`TwoFactorController`](../src/two-factor/two-factor.controller.ts) | `AuthGuard` + throttle | **Shipped** — `204` |

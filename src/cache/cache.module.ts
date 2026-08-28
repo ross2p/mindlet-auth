@@ -17,7 +17,7 @@ export class CacheModule {
           provide: CacheService,
           useFactory: (config: ConfigService): CacheService => {
             const options: CacheModuleOptions = {
-              redisUrl: config.get<string>('REDIS_URL') ?? '',
+              redisUrl: config.getOrThrow<string>('REDIS_URL'),
               prefix: opts.prefix,
               defaultTtlSeconds: opts.defaultTtlSeconds,
             };

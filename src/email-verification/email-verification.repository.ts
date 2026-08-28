@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { EmailVerificationCodePayload } from './email-verification-code-payload.type';
+import { randomUUID } from 'crypto';
 import { CacheService } from '../cache/cache.service';
 import { EMAIL_VERIFICATION_CODE_TTL_SECONDS } from './email-verification.constants';
+import { EmailVerificationEntity } from './email-verification.entity';
+import { emailVerificationEntitySchema } from './schemas/email-verification-entity.schema';
 
 const CODE_PREFIX = 'code';
 
@@ -15,27 +17,32 @@ export class EmailVerificationRepository {
 
   async findEmailVerificationCodeByUserId(
     userId: string,
-  ): Promise<EmailVerificationCodePayload | null> {
-    return this.cache.get<EmailVerificationCodePayload>(this.getKey(userId));
+  ): Promise<EmailVerificationEntity | null> {
+    return this.cache.get<EmailVerificationEntity>(
+      this.getKey(userId),
+      emailVerificationEntitySchema,
+    );
   }
 
-  async createEmailVerificationCode(
-    userId: string,
-    code: string,
-  ): Promise<EmailVerificationCodePayload> {
+  async createEmailVerificationCode(args: {
+    userId: string;
+    code: string;
+  }): Promise<EmailVerificationEntity> {
     const now = new Date();
-    const payload: EmailVerificationCodePayload = {
-      code,
+    const entity: EmailVerificationEntity = {
+      id: randomUUID(),
+      userId: args.userId,
+      code: args.code,
       attempts: 0,
       createdAt: now,
       updatedAt: now,
     };
     await this.cache.set(
-      this.getKey(userId),
-      payload,
+      this.getKey(args.userId),
+      entity,
       EMAIL_VERIFICATION_CODE_TTL_SECONDS,
     );
-    return payload;
+    return entity;
   }
 
   async deleteEmailVerificationCode(userId: string): Promise<void> {

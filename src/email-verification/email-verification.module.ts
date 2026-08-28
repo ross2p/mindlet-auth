@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { EmailVerificationMessageController } from './email-verification-message.controller';
+import { EmailVerificationController } from './email-verification.controller';
 import { EmailVerificationService } from './email-verification.service';
 import { EmailVerificationRepository } from './email-verification.repository';
 import { ClientModule, Services } from '@ross2p/common';
@@ -7,7 +7,7 @@ import { CacheModule } from '../cache/cache.module';
 import { EMAIL_VERIFICATION_CODE_TTL_SECONDS } from './email-verification.constants';
 
 @Module({
-  controllers: [EmailVerificationMessageController],
+  controllers: [EmailVerificationController],
   providers: [EmailVerificationService, EmailVerificationRepository],
   imports: [
     ClientModule.register(Services.USER, Services.NOTIFICATION),

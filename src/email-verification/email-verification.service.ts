@@ -6,6 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
+import type { EmailVerificationType } from '@ross2p/types';
 import {
   ClientService,
   Services,
@@ -43,7 +44,7 @@ export class EmailVerificationService implements OnModuleInit {
     return randomInt(0, 1_000_000).toString().padStart(6, '0');
   }
 
-  async sendCode(args: { sessionId: string }): Promise<void> {
+  async sendCode(args: { sessionId: string }): Promise<EmailVerificationType> {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       args.sessionId,
     );
@@ -56,11 +57,11 @@ export class EmailVerificationService implements OnModuleInit {
       throw new ConflictException('Email is already verified');
     }
 
-    const code = this.generateCode();
-    await this.emailVerificationRepository.createEmailVerificationCode(
-      user.id,
-      code,
-    );
+    const { code, ...emailVerification } =
+      await this.emailVerificationRepository.createEmailVerificationCode({
+        userId: user.id,
+        code: this.generateCode(),
+      });
     await this.notificationClient.sendAndReturnPromise(
       'email.send-mail-confirmation',
       {
@@ -68,9 +69,11 @@ export class EmailVerificationService implements OnModuleInit {
         code,
       },
     );
+    return emailVerification;
   }
 
   async checkCode(args: {
+    id: string;
     userId: string;
     sessionId: string;
     email: string;
@@ -89,7 +92,7 @@ export class EmailVerificationService implements OnModuleInit {
       await this.emailVerificationRepository.findEmailVerificationCodeByUserId(
         args.userId,
       );
-    if (!stored || stored.code !== args.code.trim()) {
+    if (!stored || stored.id !== args.id || stored.code !== args.code.trim()) {
       throw new BadRequestException(
         'Code is invalid or expired — request a new one',
       );
