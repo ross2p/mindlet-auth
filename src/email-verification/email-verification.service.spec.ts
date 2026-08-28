@@ -57,6 +57,26 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
     expect(
       emailVerificationRepository.createEmailVerificationCode,
     ).toHaveBeenCalledWith('u1', expect.stringMatching(/^\d{6}$/));
+    expect(notificationClient.sendAndReturnPromise).toHaveBeenCalled();
+  });
+
+  it('fails closed when notification is unavailable (AC-01)', async () => {
+    sessionService.findActiveSessionByIdOrThrow.mockResolvedValue({
+      id: 's1',
+      userId: 'u1',
+    });
+    userService.sendAndReturnPromise.mockResolvedValue({
+      id: 'u1',
+      email: 'user-a1b2@example.test',
+      emailVerifiedAt: null,
+    });
+    notificationClient.sendAndReturnPromise.mockRejectedValue(
+      new Error('mail down'),
+    );
+
+    await expect(service.sendCode({ sessionId: 's1' })).rejects.toThrow(
+      'mail down',
+    );
   });
 
   it('rejects sendCode when email already verified (AC-06)', async () => {

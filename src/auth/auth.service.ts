@@ -102,7 +102,7 @@ export class AuthService {
 
     const pendingVerification = user.emailVerifiedAt == null;
 
-    return this.userTokenService.generateTokens({
+    const tokens = this.userTokenService.generateTokens({
       id: user.id,
       email: user.email,
       sessionId: session.id,
@@ -110,5 +110,10 @@ export class AuthService {
       emailVerifiedAt: user.emailVerifiedAt,
       pendingVerification,
     });
+    await this.sessionService.persistRefreshTokenHash(
+      session.id,
+      tokens.refreshToken.token,
+    );
+    return tokens;
   }
 }

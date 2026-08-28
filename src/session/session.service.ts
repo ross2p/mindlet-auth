@@ -88,6 +88,15 @@ export class SessionService {
     return this.sessionRepository.updateSession(sessionId, updateSessionDto);
   }
 
+  async persistRefreshTokenHash(
+    sessionId: string,
+    refreshToken: string,
+  ): Promise<SessionEntity> {
+    return this.updateSession(sessionId, {
+      refreshTokenHash: sha256Hex(refreshToken),
+    });
+  }
+
   async updateTwoFactorVerifiedAt(
     sessionId: string,
     twoFactorVerifiedAt: Date,

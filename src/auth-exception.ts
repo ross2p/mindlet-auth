@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -36,6 +38,16 @@ export function throwAuthUnauthorized(
   message: string,
 ): never {
   throw new UnauthorizedException(authError(code, message));
+}
+
+export function throwAuthTooManyRequests(
+  code: AuthErrorCodeValue,
+  message: string,
+): never {
+  throw new HttpException(
+    authError(code, message),
+    HttpStatus.TOO_MANY_REQUESTS,
+  );
 }
 
 export { AuthErrorCode };

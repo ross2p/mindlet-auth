@@ -26,6 +26,7 @@ export class TwoFactorMessageController {
       userId: data.userId,
       sessionId: data.sessionId,
       code: data.code,
+      method: data.method,
     });
   }
 }

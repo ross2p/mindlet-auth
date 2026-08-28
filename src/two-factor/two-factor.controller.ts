@@ -81,6 +81,7 @@ export class TwoFactorController {
       userId: user.id,
       sessionId: user.sessionId,
       code: body.code,
+      method: body.method,
     });
   }
 }

@@ -82,6 +82,21 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
         { userId: 'u1', token: 'tok' },
       );
     });
+
+    it('fails closed when notification is down for a known user', async () => {
+      userService.sendAndReturnPromise.mockResolvedValue({
+        id: 'u1',
+        email: 'user@example.test',
+      });
+      passwordResetTokenService.create.mockResolvedValue({ token: 'tok' });
+      notificationClient.sendAndReturnPromise.mockRejectedValue(
+        new Error('mail down'),
+      );
+
+      await expect(
+        service.forgotPassword({ email: 'user@example.test' }),
+      ).rejects.toThrow('mail down');
+    });
   });
 
   describe('resetPassword (AC-13/15)', () => {

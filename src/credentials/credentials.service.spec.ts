@@ -1,4 +1,6 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { AuthErrorCode } from '../auth-error';
+import { SESSION_REFRESH_TTL_MS } from '../auth-challenge.constants';
 import { CredentialsService } from './credentials.service';
 
 describe('CredentialsService login (AC-07/08/10)', () => {
@@ -66,6 +68,32 @@ describe('CredentialsService login (AC-07/08/10)', () => {
     expect(result.platformAccessOpen).toBe(false);
     expect(result.twoFactorChallenge?.required).toBe(true);
     expect(twoFactorService.sendCode).toHaveBeenCalledWith({ sessionId: 's1' });
+    const sessionCalls = sessionService.createSession.mock.calls as unknown as [
+      [{ expiresAt: Date; refreshAt: Date }],
+    ];
+    const created = sessionCalls[0][0];
+    expect(created.expiresAt.getTime() - created.refreshAt.getTime()).toBe(
+      SESSION_REFRESH_TTL_MS,
+    );
+  });
+
+  it('maps miss, bad password, and soft-delete to 401 auth.sign_in_unavailable (AC-08)', async () => {
+    userService.sendAndReturnPromise.mockResolvedValue(null);
+
+    try {
+      await service.emailLogin({
+        email: 'missing@example.test',
+        password: 'Passw0rd1',
+        userAgent: null,
+        ipAddress: null,
+      });
+      fail('expected unauthorized');
+    } catch (err) {
+      expect(err).toBeInstanceOf(UnauthorizedException);
+      expect((err as UnauthorizedException).getResponse()).toMatchObject({
+        code: AuthErrorCode.signInUnavailable,
+      });
+    }
   });
 
   it('maps soft-deleted user Forbidden to sign-in unavailable (AC-08)', async () => {
@@ -80,6 +108,6 @@ describe('CredentialsService login (AC-07/08/10)', () => {
         userAgent: null,
         ipAddress: null,
       }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

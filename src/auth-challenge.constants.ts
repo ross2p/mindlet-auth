@@ -6,6 +6,19 @@ export const TWO_FACTOR_CHALLENGE_TTL_SECONDS = 5 * 60; // challenge entry windo
 
 export const TWO_FACTOR_MAX_FAILED_ATTEMPTS = 5;
 export const TWO_FACTOR_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+export const TWO_FACTOR_ATTEMPT_TTL_SECONDS =
+  TWO_FACTOR_ATTEMPT_WINDOW_MS / 1000;
+
+/** Refresh / Session TTL after unlock — spec §6 ≤ 30 days. */
+export const SESSION_REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function sessionExpiresAt(now = new Date()): Date {
+  return new Date(now.getTime() + SESSION_REFRESH_TTL_MS);
+}
+
+export function twoFactorUserFailKey(userId: string): string {
+  return `fail:${userId}`;
+}
 
 export const LOGIN_RATE_LIMIT = {
   limit: 10,

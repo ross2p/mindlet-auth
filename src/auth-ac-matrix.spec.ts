@@ -254,9 +254,19 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
           userAgent: null,
           ipAddress: null,
         }),
-      ).rejects.toMatchObject({
-        message: 'Sign-in is unavailable for these credentials',
-      });
+      ).rejects.toThrow();
+      try {
+        await credentials.emailLogin({
+          email: 'gone@example.test',
+          password: 'Passw0rd1',
+          userAgent: null,
+          ipAddress: null,
+        });
+      } catch (err) {
+        expect(
+          (err as { getResponse: () => { code: string } }).getResponse(),
+        ).toMatchObject({ code: 'auth.sign_in_unavailable' });
+      }
     });
   });
 });

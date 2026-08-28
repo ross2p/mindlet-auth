@@ -61,12 +61,13 @@ export class EmailVerificationService implements OnModuleInit {
       user.id,
       code,
     );
-    await this.notificationClient
-      .sendAndReturnPromise('email.send-mail-confirmation', {
+    await this.notificationClient.sendAndReturnPromise(
+      'email.send-mail-confirmation',
+      {
         userId: user.id,
         code,
-      })
-      .catch(() => undefined);
+      },
+    );
   }
 
   async checkCode(args: {

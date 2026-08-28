@@ -68,12 +68,13 @@ export class PasswordResetService implements OnModuleInit {
     }
 
     const { token } = await this.passwordResetTokenService.create(user.email);
-    await this.notificationClient
-      .sendAndReturnPromise('email.send-password-reset', {
+    await this.notificationClient.sendAndReturnPromise(
+      'email.send-password-reset',
+      {
         userId: user.id,
         token,
-      })
-      .catch(() => undefined);
+      },
+    );
   }
 
   /** AC-13 / AC-15 — consume token, update password, revoke all Sessions. */
@@ -135,6 +136,7 @@ export class PasswordResetService implements OnModuleInit {
       try {
         await this.twoFactorService.verifyChallengeCode({
           sessionId: args.sessionId,
+          userId: args.userId,
           code: args.twoFactorCode,
         });
       } catch {

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -24,6 +23,8 @@ import { UserTokensDto } from './dto/user-tokens.dto';
 import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
 import { computePlatformAccessOpen } from '../platform-access.util';
 import { buildTwoFactorChallenge } from '../two-factor/two-factor-methods.util';
+import { sessionExpiresAt } from '../auth-challenge.constants';
+import { AuthErrorCode, throwAuthUnauthorized } from '../auth-exception';
 
 @Injectable()
 export class CredentialsService implements OnModuleInit {
@@ -55,7 +56,8 @@ export class CredentialsService implements OnModuleInit {
         (err as { status?: number })?.status === 403 ||
         String((err as Error)?.message ?? '').includes('unavailable')
       ) {
-        throw new BadRequestException(
+        throwAuthUnauthorized(
+          AuthErrorCode.signInUnavailable,
           'Sign-in is unavailable for these credentials',
         );
       }
@@ -67,7 +69,10 @@ export class CredentialsService implements OnModuleInit {
     const user = await this.loadUserByEmail(command.email);
 
     if (!user) {
-      throw new BadRequestException('Invalid credentials');
+      throwAuthUnauthorized(
+        AuthErrorCode.signInUnavailable,
+        'Sign-in is unavailable for these credentials',
+      );
     }
 
     const isPasswordValid: boolean = await this.userService
@@ -78,16 +83,20 @@ export class CredentialsService implements OnModuleInit {
       .catch((): boolean => false);
 
     if (!isPasswordValid) {
-      throw new BadRequestException('Invalid credentials');
+      throwAuthUnauthorized(
+        AuthErrorCode.signInUnavailable,
+        'Sign-in is unavailable for these credentials',
+      );
     }
 
+    const now = new Date();
     const session = await this.sessionService.createSession({
       userId: user.id,
       userAgent: command.userAgent,
       ipAddress: command.ipAddress,
       provider: SessionProvider.CREDENTIALS,
-      refreshAt: new Date(),
-      expiresAt: new Date(),
+      refreshAt: now,
+      expiresAt: sessionExpiresAt(now),
       twoFactorVerifiedAt: user.twoFactorEnabled ? null : new Date(),
     });
 
@@ -125,13 +134,14 @@ export class CredentialsService implements OnModuleInit {
       CreateUserDto
     >(UserMessage.CREATE, command);
 
+    const now = new Date();
     const session = await this.sessionService.createSession({
       userId: user.id,
       userAgent: command.userAgent,
       ipAddress: command.ipAddress,
       provider: SessionProvider.CREDENTIALS,
-      refreshAt: new Date(),
-      expiresAt: new Date(),
+      refreshAt: now,
+      expiresAt: sessionExpiresAt(now),
       twoFactorVerifiedAt: user.twoFactorEnabled ? null : new Date(),
     });
 
