@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { TwoFactorChallengeType, UserTokensType } from '@ross2p/types';
 import { RefreshTokenPayloadDto } from '../../auth/dto/refresh-token-payload.dto';
 import { TokenPayloadDto } from '../../auth/dto/token-payload.dto';
 import { AuthUserDto } from './auth-user.dto';
-import type { TwoFactorChallengeView } from '../../two-factor/two-factor-methods.util';
 
-export class UserTokensDto {
+export class UserTokensDto implements UserTokensType {
   @ApiProperty({ type: AuthUserDto })
   user!: AuthUserDto;
 
@@ -30,7 +30,7 @@ export class UserTokensDto {
       '2FA method picker when a challenge is required after password',
     nullable: true,
   })
-  twoFactorChallenge!: TwoFactorChallengeView | null;
+  twoFactorChallenge!: TwoFactorChallengeType | null;
 
   @ApiProperty({ type: TokenPayloadDto })
   accessToken!: TokenPayloadDto;

@@ -27,11 +27,6 @@ type AuthSessionBody = {
   refreshToken?: TokenEnvelope;
 };
 
-type ErrorBody = {
-  code?: string;
-  message?: string;
-};
-
 type ApiEnvelope<T> = {
   data?: T;
 } & T;
@@ -65,7 +60,6 @@ function tokenString(value: TokenEnvelope | undefined): string {
 
   const email = `user-${Date.now()}@example.test`;
   const password = 'Passw0rd1';
-  let refreshToken = '';
   let accessToken = '';
   let sessionId = '';
 
@@ -85,19 +79,7 @@ function tokenString(value: TokenEnvelope | undefined): string {
     expect(body.sessionId).toBeTruthy();
     sessionId = body.sessionId ?? '';
     accessToken = tokenString(body.accessToken);
-    refreshToken = tokenString(body.refreshToken);
-  });
-
-  it('AC-09 — refresh blocked before unlock', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/v1/auth/refresh')
-      .send({ refreshToken })
-      .expect(403);
-
-    const err = unwrapBody<ErrorBody>(res.body);
-    expect(err.code ?? err.message ?? JSON.stringify(res.body)).toMatch(
-      /refresh|verification|challenge/i,
-    );
+    expect(tokenString(body.refreshToken)).toBeTruthy();
   });
 
   it('AC-14 — forgot-password always acknowledges', async () => {

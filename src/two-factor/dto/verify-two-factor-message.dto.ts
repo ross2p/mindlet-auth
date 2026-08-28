@@ -4,17 +4,19 @@ import {
   type VerifyTwoFactorCodeType,
 } from '@ross2p/types';
 
-export class VerifyTwoFactorCodeDto implements VerifyTwoFactorCodeType {
+export class VerifyTwoFactorMessageDto implements VerifyTwoFactorCodeType {
+  @ApiProperty({ description: 'User identifier', format: 'uuid' })
+  userId!: string;
+
+  @ApiProperty({ description: 'Session identifier', format: 'uuid' })
+  sessionId!: string;
+
   @ApiProperty({
     description: 'Selected 2FA method from the picker',
     enum: TWO_FACTOR_METHOD_IDS,
-    example: 'email',
   })
   method!: VerifyTwoFactorCodeType['method'];
 
-  @ApiProperty({
-    description: 'OTP or backup code',
-    example: '123456',
-  })
+  @ApiProperty({ description: 'OTP or backup code' })
   code!: string;
 }

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TWO_FACTOR_METHOD_IDS, type ChangePasswordType } from '@ross2p/types';
 
-export class ChangePasswordDto {
+export class ChangePasswordDto implements ChangePasswordType {
   @ApiProperty({
     description: 'Current account password',
     example: 'Passw0rd1',
@@ -16,9 +17,9 @@ export class ChangePasswordDto {
   @ApiPropertyOptional({
     description: '2FA method when enabled (email | totp | backup)',
     nullable: true,
-    enum: ['email', 'totp', 'backup'],
+    enum: TWO_FACTOR_METHOD_IDS,
   })
-  twoFactorMethod?: 'email' | 'totp' | 'backup' | null;
+  twoFactorMethod?: ChangePasswordType['twoFactorMethod'];
 
   @ApiPropertyOptional({
     description: '2FA challenge code when 2FA is enabled',

@@ -9,11 +9,10 @@ import {
   UserDetails,
   ValidationPipe,
 } from '@ross2p/common';
-import { forgotPasswordSchema } from '@ross2p/types';
+import { changePasswordSchema, forgotPasswordSchema } from '@ross2p/types';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { changePasswordSchema } from './schemas/change-password.schema';
 import { resetPasswordPortSchema } from './schemas/reset-password.schema';
 import { FORGOT_PASSWORD_RATE_LIMIT } from '../auth-challenge.constants';
 import {

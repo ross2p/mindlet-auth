@@ -1,12 +1,4 @@
-export type TwoFactorMethodView = {
-  id: 'email' | 'totp' | 'backup';
-  available: boolean;
-};
-
-export type TwoFactorChallengeView = {
-  required: boolean;
-  methods: TwoFactorMethodView[];
-};
+import type { TwoFactorChallengeType } from '@ross2p/types';
 
 /**
  * Login-time method picker (AC-10). Setup lives in profile-and-settings;
@@ -17,7 +9,7 @@ export function buildTwoFactorChallenge(input: {
   twoFactorEnabled: boolean;
   totpConfigured?: boolean;
   backupCodesAvailable?: boolean;
-}): TwoFactorChallengeView | null {
+}): TwoFactorChallengeType | null {
   if (!input.twoFactorEnabled) {
     return null;
   }

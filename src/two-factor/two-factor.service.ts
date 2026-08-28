@@ -14,6 +14,8 @@ import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
 import { isTwoFactorAttemptsExceeded } from '../auth-challenge.constants';
+import { AuthErrorCode, throwAuthConflict } from '../auth-exception';
+import { buildTwoFactorChallenge } from './two-factor-methods.util';
 
 @Injectable()
 export class TwoFactorService implements OnModuleInit {
@@ -137,5 +139,22 @@ export class TwoFactorService implements OnModuleInit {
     );
 
     return this.authService.refreshAccessTokenBySessionId(args.sessionId);
+  }
+
+  async listTwoFactorMethods(args: { userId: string; sessionId: string }) {
+    const session = await this.sessionService.findActiveSessionByIdOrThrow(
+      args.sessionId,
+    );
+    const fullUser = await this.loadUser(args.userId);
+    const challenge = buildTwoFactorChallenge({
+      twoFactorEnabled: fullUser.twoFactorEnabled,
+    });
+    if (!challenge || session.twoFactorVerifiedAt != null) {
+      throwAuthConflict(
+        AuthErrorCode.twoFactorNotRequired,
+        'Two-factor challenge is not pending',
+      );
+    }
+    return { methods: challenge.methods };
   }
 }

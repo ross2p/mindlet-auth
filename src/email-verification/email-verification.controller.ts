@@ -50,7 +50,7 @@ export class EmailVerificationController {
   @ApiOperation({
     summary: 'Verify email with 6-digit code',
     description:
-      'Returns a new access token payload (same shape as POST /auth/refresh).',
+      'Returns a new access token payload (same shape as auth token refresh).',
   })
   @ApiResponse({
     status: 200,
