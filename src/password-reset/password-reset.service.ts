@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   ClientService,
+  NotificationMessage,
   Services,
   UserMessage,
   UserPrivateMessage,
@@ -36,7 +37,9 @@ export class PasswordResetService implements OnModuleInit {
     this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
     this.userService.subscribeToResponseOf(UserPrivateMessage.UPDATE);
     this.userService.subscribeToResponseOf(UserMessage.VERIFY_PASSWORD);
-    this.notificationClient.subscribeToResponseOf('email.send-password-reset');
+    this.notificationClient.subscribeToResponseOf(
+      NotificationMessage.SEND_PASSWORD_RESET,
+    );
     await this.userService.connect();
     await this.notificationClient.connect();
   }
@@ -69,7 +72,7 @@ export class PasswordResetService implements OnModuleInit {
 
     const { token } = await this.passwordResetTokenService.create(user.email);
     await this.notificationClient.sendAndReturnPromise(
-      'email.send-password-reset',
+      NotificationMessage.SEND_PASSWORD_RESET,
       {
         userId: user.id,
         token,

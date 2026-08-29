@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TwoFactorMessageController } from './two-factor-message.controller';
+import { TwoFactorController } from './two-factor.controller';
 import { TwoFactorService } from './two-factor.service';
 import { TwoFactorRepository } from './two-factor.repository';
 import { ClientModule, Services } from '@ross2p/common';
@@ -7,7 +7,7 @@ import { CacheModule } from '../cache/cache.module';
 import { TWO_FACTOR_CHALLENGE_TTL_SECONDS } from './two-factor.constants';
 
 @Module({
-  controllers: [TwoFactorMessageController],
+  controllers: [TwoFactorController],
   providers: [TwoFactorService, TwoFactorRepository],
   imports: [
     ClientModule.register(Services.USER, Services.NOTIFICATION),

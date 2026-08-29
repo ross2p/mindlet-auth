@@ -1,16 +1,36 @@
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { MicroServiceApplicationConfig } from '@ross2p/common';
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { KafkaOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
-import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app =
-    await MicroServiceApplicationConfig.create<NestExpressApplication>(
-      AppModule,
-    );
+  const logger = new Logger('Auth');
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-  app.application.use(cookieParser());
-  app.init();
-  await app.start();
+  app.connectMicroservice<KafkaOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        brokers: [configService.get<string>('KAFKA_BROKER')!],
+        clientId: 'auth-client',
+      },
+      consumer: {
+        groupId: 'auth-consumer',
+        allowAutoTopicCreation: true,
+      },
+      subscribe: {
+        fromBeginning: true,
+      },
+    },
+  });
+
+  await app.startAllMicroservices();
+
+  const port = configService.get<number>('PORT') || 3000;
+  await app.listen(port);
+  logger.log(`🚀 Application is running on port ${port}`);
 }
+
 void bootstrap();

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CommonModule } from '@ross2p/common';
 import { AuthModule } from './auth/auth.module';
 import { CredentialsModule } from './credentials/credentials.module';
 import { GoogleModule } from './google/google.module';
@@ -12,6 +13,7 @@ import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [
+    CommonModule,
     DatabaseModule,
     SessionModule,
     TokenModule,

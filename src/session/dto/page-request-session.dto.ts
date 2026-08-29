@@ -14,17 +14,17 @@ export class PageRequestSessionDto extends PageRequestQueryDto {
   }
 
   toPageResponse(
-    content: SessionDto[],
+    data: SessionDto[],
     totalCount: number,
   ): PageResponseSessionDto {
-    const pageSize = Math.min(content.length, this.pageSize);
+    const pageSize = Math.min(data.length, this.pageSize);
     const denominator = Math.max(1, pageSize === 0 ? this.pageSize : pageSize);
 
     return {
       pageNumber: this.pageNumber,
       pageSize,
       pageCount: Math.ceil(totalCount / denominator),
-      content,
+      data,
       totalCount,
     };
   }

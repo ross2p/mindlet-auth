@@ -4,7 +4,7 @@ import { SessionDto } from './session.dto';
 
 export class PageResponseSessionDto implements PageResponse<SessionType> {
   @ApiProperty({ type: [SessionDto] })
-  content!: SessionDto[];
+  data!: SessionDto[];
 
   @ApiProperty()
   totalCount!: number;
