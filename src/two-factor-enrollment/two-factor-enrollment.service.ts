@@ -8,6 +8,7 @@ import {
 import { randomInt } from 'crypto';
 import {
   ClientService,
+  NotificationMessage,
   Services,
   UserMessage,
   UserQuery,
@@ -28,6 +29,9 @@ export class TwoFactorEnrollmentService implements OnModuleInit {
     this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
     this.userService.subscribeToResponseOf(UserMessage.VERIFY_PASSWORD);
     this.userService.subscribeToResponseOf(UserMessage.SET_TWO_FACTOR_ENABLED);
+    this.notificationClient.subscribeToResponseOf(
+      NotificationMessage.SEND_TWO_FACTOR,
+    );
     await this.userService.connect();
     await this.notificationClient.connect();
   }
@@ -52,10 +56,14 @@ export class TwoFactorEnrollmentService implements OnModuleInit {
     }
     const code = this.generateCode();
     await this.enrollmentRepository.createEnrollmentChallenge(userId, code);
-    this.notificationClient.emitEvent('notification.send-two-factor', {
-      userId,
-      code,
-    });
+    await this.notificationClient.sendAndReturnPromise(
+      NotificationMessage.SEND_TWO_FACTOR,
+      {
+        userId,
+        code,
+        provider: 'EMAIL',
+      },
+    );
   }
 
   async confirmEnable(userId: string, code: string): Promise<void> {

@@ -1,69 +1,38 @@
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { SessionService } from './session.service';
-import {
-  AuthGuard,
-  AuthenticatedUser,
-  ResponseMessage,
-  UserDetails,
-  ValidationPipe,
-} from '@ross2p/common';
-import { pageRequestSessionQuerySchema } from '@ross2p/types';
-import { PageRequestQueryDto } from './dto/page-request-query.dto';
+import { Controller } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
+import { AuthMessage, DataPayload } from '@ross2p/common';
+import { ListSessionsMessageDto } from './dto/list-sessions-message.dto';
 import { PageRequestSessionDto } from './dto/page-request-session.dto';
-import { PageResponseSessionDto } from './dto/page-response-session.dto';
+import { SessionIdentityDto } from './dto/session-identity.dto';
+import { UserIdMessageDto } from './dto/user-id-message.dto';
+import { SessionService } from './session.service';
 
-@ApiTags('Sessions')
-@Controller('session')
-@UseGuards(AuthGuard)
+@Controller()
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 
-  @Post('sign-out')
-  @HttpCode(204)
-  @ResponseMessage('Signed out successfully')
-  async signOut(@UserDetails() user: AuthenticatedUser): Promise<void> {
-    await this.sessionService.signOut(user.id, user.sessionId, 'sign-out');
-  }
-
-  @Post('sign-out-all')
-  @HttpCode(204)
-  @ResponseMessage('Signed out of all sessions')
-  async signOutAll(@UserDetails() user: AuthenticatedUser): Promise<void> {
-    await this.sessionService.signOutAll(user.id);
-  }
-
-  @Get()
-  @ResponseMessage('Sessions retrieved')
-  @ApiOperation({ summary: 'List active sessions for the signed-in user' })
-  @ApiResponse({ status: 200, type: PageResponseSessionDto })
-  async listSessions(
-    @UserDetails() user: AuthenticatedUser,
-    @Query(new ValidationPipe(pageRequestSessionQuerySchema))
-    query: PageRequestQueryDto,
-  ): Promise<PageResponseSessionDto> {
-    const dto = Object.assign(new PageRequestSessionDto(), query, {
-      userId: user.id,
+  @MessagePattern(AuthMessage.SESSION_LIST)
+  listSessions(@DataPayload() data: ListSessionsMessageDto) {
+    const dto = Object.assign(new PageRequestSessionDto(), {
+      userId: data.userId,
+      pageNumber: data.pageNumber ?? 1,
+      pageSize: data.pageSize ?? 200,
     });
     return this.sessionService.findSessionsPageByUserId(dto);
   }
 
-  @Delete(':id')
-  @HttpCode(204)
-  @ResponseMessage('Session revoked')
-  async deleteSession(
-    @UserDetails() user: AuthenticatedUser,
-    @Param('id') sessionId: string,
-  ): Promise<void> {
-    await this.sessionService.signOut(user.id, sessionId, 'revoked');
+  @MessagePattern(AuthMessage.SESSION_SIGN_OUT)
+  signOutSession(@DataPayload() data: SessionIdentityDto) {
+    return this.sessionService.signOut(data.userId, data.sessionId, 'sign-out');
+  }
+
+  @MessagePattern(AuthMessage.SESSION_SIGN_OUT_ALL)
+  signOutAllSessions(@DataPayload() data: UserIdMessageDto) {
+    return this.sessionService.signOutAll(data.userId);
+  }
+
+  @MessagePattern(AuthMessage.SESSION_REVOKE)
+  revokeSession(@DataPayload() data: SessionIdentityDto) {
+    return this.sessionService.signOut(data.userId, data.sessionId, 'revoked');
   }
 }

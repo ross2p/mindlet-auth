@@ -1,6 +1,11 @@
 import { Inject, Injectable, OnModuleInit, forwardRef } from '@nestjs/common';
 import { randomInt } from 'crypto';
-import { ClientService, Services, UserQuery } from '@ross2p/common';
+import {
+  ClientService,
+  NotificationMessage,
+  Services,
+  UserQuery,
+} from '@ross2p/common';
 import type { VerifyTwoFactorCodeType } from '@ross2p/types';
 import { TwoFactorRepository } from './two-factor.repository';
 import { AuthService } from '../auth/auth.service';
@@ -31,7 +36,7 @@ export class TwoFactorService implements OnModuleInit {
   async onModuleInit() {
     this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
     this.notificationClient.subscribeToResponseOf(
-      'notification.send-two-factor',
+      NotificationMessage.SEND_TWO_FACTOR,
     );
     await this.userService.connect();
     await this.notificationClient.connect();
@@ -58,7 +63,7 @@ export class TwoFactorService implements OnModuleInit {
       code,
     });
     await this.notificationClient.sendAndReturnPromise(
-      'notification.send-two-factor',
+      NotificationMessage.SEND_TWO_FACTOR,
       {
         userId: user.id,
         code,

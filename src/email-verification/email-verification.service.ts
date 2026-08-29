@@ -9,6 +9,7 @@ import { randomInt } from 'crypto';
 import type { EmailVerificationType } from '@ross2p/types';
 import {
   ClientService,
+  NotificationMessage,
   Services,
   UserMessage,
   UserQuery,
@@ -34,7 +35,7 @@ export class EmailVerificationService implements OnModuleInit {
     this.userService.subscribeToResponseOf(UserMessage.EMAIL_MARK_VERIFIED);
     this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
     this.notificationClient.subscribeToResponseOf(
-      'email.send-mail-confirmation',
+      NotificationMessage.SEND_MAIL_CONFIRMATION,
     );
     await this.userService.connect();
     await this.notificationClient.connect();
@@ -63,7 +64,7 @@ export class EmailVerificationService implements OnModuleInit {
         code: this.generateCode(),
       });
     await this.notificationClient.sendAndReturnPromise(
-      'email.send-mail-confirmation',
+      NotificationMessage.SEND_MAIL_CONFIRMATION,
       {
         userId: user.id,
         code,
