@@ -34,3 +34,35 @@ enum SessionProvider {
   CREDENTIALS
   GOOGLE
 }
+
+// ADR-0004: revives the shape 20260514120000_drop_two_factor_tables removed
+// (recovery_codes, two_factor_secrets) -- per-method state a boolean cannot
+// represent (spec AC-30). userId has no FK: User lives in the `user`
+// service's own database (no shared DB, PLATFORM_CONTRACT.md).
+enum SecondFactorMethodType {
+  TOTP
+  EMAIL_CODE
+}
+
+model SecondFactorMethod {
+  id        String                 @id @default(uuid()) @db.Uuid
+  userId    String                 @db.Uuid
+  type      SecondFactorMethodType
+  enabled   Boolean                @default(true)
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  @@unique([userId, type])
+  @@map("second_factor_methods")
+}
+
+model BackupCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("backup_codes")
+}
