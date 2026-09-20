@@ -16,6 +16,6 @@ import { TWO_FACTOR_ENROLLMENT_TTL_SECONDS } from './two-factor-enrollment.const
       defaultTtlSeconds: TWO_FACTOR_ENROLLMENT_TTL_SECONDS,
     }),
   ],
-  exports: [TwoFactorEnrollmentService],
+  exports: [TwoFactorEnrollmentService, TwoFactorEnrollmentRepository],
 })
 export class TwoFactorEnrollmentModule {}
