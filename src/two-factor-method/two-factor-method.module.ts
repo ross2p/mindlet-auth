@@ -5,6 +5,7 @@ import { BackupCodeModule } from '../backup-code/backup-code.module';
 import { ReauthModule } from '../reauth/reauth.module';
 import { TwoFactorMethodRepository } from './two-factor-method.repository';
 import { TwoFactorMethodService } from './two-factor-method.service';
+import { TwoFactorMethodMessageController } from './two-factor-method-message.controller';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TwoFactorMethodService } from './two-factor-method.service';
     ReauthModule,
     ClientModule.register(Services.USER, Services.NOTIFICATION),
   ],
+  controllers: [TwoFactorMethodMessageController],
   providers: [TwoFactorMethodRepository, TwoFactorMethodService],
   exports: [TwoFactorMethodRepository, TwoFactorMethodService],
 })

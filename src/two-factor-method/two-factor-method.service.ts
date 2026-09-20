@@ -12,12 +12,13 @@ import {
   NotificationMessage,
   Services,
 } from '@ross2p/common';
+import type { EnableSecondFactorMethodResultType } from '@ross2p/types';
 import type { SecondFactorMethodType } from '.prisma/client-auth';
 import { TwoFactorEnrollmentRepository } from '../two-factor-enrollment/two-factor-enrollment.repository';
 import { TwoFactorMethodRepository } from './two-factor-method.repository';
 import { BackupCodeRepository } from '../backup-code/backup-code.repository';
 import { ReauthService } from '../reauth/reauth.service';
-import { EnableResult } from './enable-result.type';
+import { TwoFactorMethodEntity } from './two-factor-method.entity';
 
 const SUPPORTED_METHODS: SecondFactorMethodType[] = ['EMAIL_CODE'];
 const BACKUP_CODE_COUNT = 10;
@@ -52,6 +53,10 @@ export class TwoFactorMethodService {
     );
   }
 
+  public listMethods(userId: string): Promise<TwoFactorMethodEntity[]> {
+    return this.methodRepository.findActiveByUserId(userId);
+  }
+
   public async beginEnable(
     userId: string,
     type: SecondFactorMethodType,
@@ -70,7 +75,7 @@ export class TwoFactorMethodService {
     userId: string,
     type: SecondFactorMethodType,
     code: string,
-  ): Promise<EnableResult> {
+  ): Promise<EnableSecondFactorMethodResultType> {
     this.assertSupported(type);
 
     const challenge = await this.enrollmentRepository.findByUserId(userId);
@@ -143,7 +148,9 @@ export class TwoFactorMethodService {
   }
 
   /** Invalidates the previous set and issues a new one exactly once (AC-31). */
-  public async regenerateBackupCodes(userId: string): Promise<EnableResult> {
+  public async regenerateBackupCodes(
+    userId: string,
+  ): Promise<EnableSecondFactorMethodResultType> {
     const verified = await this.reauthService.isVerified(userId);
     if (!verified) {
       throw new UnauthorizedException(

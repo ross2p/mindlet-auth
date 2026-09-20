@@ -19,6 +19,7 @@ import { TwoFactorModule } from './two-factor/two-factor.module';
 import { TwoFactorEnrollmentModule } from './two-factor-enrollment/two-factor-enrollment.module';
 import { TokenModule } from './token/token.module';
 import { ReauthModule } from './reauth/reauth.module';
+import { TwoFactorMethodModule } from './two-factor-method/two-factor-method.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ReauthModule } from './reauth/reauth.module';
     TwoFactorModule,
     TwoFactorEnrollmentModule,
     ReauthModule,
+    TwoFactorMethodModule,
   ],
   providers: [
     {

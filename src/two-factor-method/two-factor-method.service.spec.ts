@@ -161,6 +161,19 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
     });
   });
 
+  describe('listMethods', () => {
+    it('returns the active methods for a user', async () => {
+      methodRepository.findActiveByUserId.mockResolvedValue([
+        { id: 'm1', userId: 'u1', type: 'EMAIL_CODE', enabled: true },
+      ]);
+
+      const result = await service.listMethods('u1');
+
+      expect(methodRepository.findActiveByUserId).toHaveBeenCalledWith('u1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
   describe('consumeBackupCodeForReauth', () => {
     it('rejects when no unused code matches', async () => {
       backupCodeRepository.findUnusedByUserId.mockResolvedValue([]);
