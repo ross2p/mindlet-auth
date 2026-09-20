@@ -148,7 +148,8 @@ export class SessionService {
     reason:
       | 'sign-out-all'
       | 'password-reset'
-      | 'password-change' = 'sign-out-all',
+      | 'password-change'
+      | 'account-deleted' = 'sign-out-all',
   ): Promise<void> {
     await this.bulkUpdateSessions(userId, {
       revokedAt: new Date(),
