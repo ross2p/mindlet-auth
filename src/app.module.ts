@@ -18,6 +18,7 @@ import { EmailVerificationModule } from './email-verification/email-verification
 import { TwoFactorModule } from './two-factor/two-factor.module';
 import { TwoFactorEnrollmentModule } from './two-factor-enrollment/two-factor-enrollment.module';
 import { TokenModule } from './token/token.module';
+import { ReauthModule } from './reauth/reauth.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TokenModule } from './token/token.module';
     EmailVerificationModule,
     TwoFactorModule,
     TwoFactorEnrollmentModule,
+    ReauthModule,
   ],
   providers: [
     {
