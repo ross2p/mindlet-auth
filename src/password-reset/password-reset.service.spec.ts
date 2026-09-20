@@ -142,8 +142,8 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
   });
 
-  describe('changePassword (AC-17)', () => {
-    it('rejects when current password is wrong', async () => {
+  describe('changePassword (AC-14/15)', () => {
+    it('rejects when current password is wrong, changing nothing and revoking nothing (AC-15)', async () => {
       userService.sendAndReturnPromise
         .mockResolvedValueOnce({
           id: 'u1',
@@ -161,6 +161,8 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
 
       expect(sessionService.signOutAll).not.toHaveBeenCalled();
+      // Only GET_BY_ID + VERIFY_PASSWORD were sent -- UserPrivateMessage.UPDATE never ran.
+      expect(userService.sendAndReturnPromise).toHaveBeenCalledTimes(2);
     });
 
     it('requires 2FA code when enabled', async () => {
