@@ -18,6 +18,9 @@ import { EmailVerificationModule } from './email-verification/email-verification
 import { TwoFactorModule } from './two-factor/two-factor.module';
 import { TwoFactorEnrollmentModule } from './two-factor-enrollment/two-factor-enrollment.module';
 import { TokenModule } from './token/token.module';
+import { ReauthModule } from './reauth/reauth.module';
+import { TwoFactorMethodModule } from './two-factor-method/two-factor-method.module';
+import { AccountDeletionSyncModule } from './account-deletion-sync/account-deletion-sync.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { TokenModule } from './token/token.module';
     EmailVerificationModule,
     TwoFactorModule,
     TwoFactorEnrollmentModule,
+    ReauthModule,
+    TwoFactorMethodModule,
+    AccountDeletionSyncModule,
   ],
   providers: [
     {
