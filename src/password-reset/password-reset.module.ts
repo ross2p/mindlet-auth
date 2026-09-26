@@ -11,5 +11,6 @@ import { TwoFactorModule } from '../two-factor/two-factor.module';
     ClientModule.register(Services.USER, Services.NOTIFICATION),
     TwoFactorModule,
   ],
+  exports: [PasswordResetService],
 })
 export class PasswordResetModule {}

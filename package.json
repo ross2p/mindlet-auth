@@ -27,6 +27,8 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.12.6",
+    "@grpc/proto-loader": "^0.7.13",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -37,8 +39,8 @@
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^6.19.0",
-    "@ross2p/common": "^0.2.2",
-    "@ross2p/types": "^0.1.2",
+    "@ross2p/common": "file:../../libs/common",
+    "@ross2p/types": "file:../../libs/types",
     "argon2": "^0.41.1",
     "cookie-parser": "^1.4.7",
     "ioredis": "^5.8.2",

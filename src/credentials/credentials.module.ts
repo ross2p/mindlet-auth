@@ -13,5 +13,6 @@ import { EmailVerificationModule } from '../email-verification/email-verificatio
     EmailVerificationModule,
   ],
   providers: [CredentialsService],
+  exports: [CredentialsService],
 })
 export class CredentialsModule {}
