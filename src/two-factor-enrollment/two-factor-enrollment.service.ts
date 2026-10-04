@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import {
-  ClientService,
+  EventClientService,
   NotificationMessage,
   Services,
   UserMessage,
@@ -20,9 +20,9 @@ import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repositor
 export class TwoFactorEnrollmentService implements OnModuleInit {
   constructor(
     private readonly enrollmentRepository: TwoFactorEnrollmentRepository,
-    @Inject(Services.USER) private readonly userService: ClientService,
+    @Inject(Services.USER) private readonly userService: EventClientService,
     @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: ClientService,
+    private readonly notificationClient: EventClientService,
   ) {}
 
   async onModuleInit() {

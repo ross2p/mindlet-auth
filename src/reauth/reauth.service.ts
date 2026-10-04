@@ -1,5 +1,5 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { ClientService, Services, UserMessage } from '@ross2p/common';
+import { EventClientService, Services, UserMessage } from '@ross2p/common';
 import { CacheService } from '../cache/cache.service';
 import { REAUTH_TTL_SECONDS } from './reauth.constants';
 
@@ -12,7 +12,7 @@ import { REAUTH_TTL_SECONDS } from './reauth.constants';
 export class ReauthService implements OnModuleInit {
   constructor(
     private readonly cache: CacheService,
-    @Inject(Services.USER) private readonly userService: ClientService,
+    @Inject(Services.USER) private readonly userService: EventClientService,
   ) {}
 
   async onModuleInit() {

@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import {
-  ClientService,
+  EventClientService,
   Services,
   UserMessage,
   UserQuery,
@@ -30,7 +30,7 @@ import { AuthErrorCode, throwAuthUnauthorized } from '../auth-exception';
 export class CredentialsService implements OnModuleInit {
   constructor(
     @Inject(Services.USER)
-    private readonly userService: ClientService,
+    private readonly userService: EventClientService,
     private readonly authService: AuthService,
     private readonly twoFactorService: TwoFactorService,
     private readonly sessionService: SessionService,

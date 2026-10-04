@@ -8,7 +8,7 @@ import {
 import { randomInt } from 'crypto';
 import type { EmailVerificationType } from '@ross2p/types';
 import {
-  ClientService,
+  EventClientService,
   NotificationMessage,
   Services,
   UserMessage,
@@ -23,9 +23,9 @@ import type { AuthUserView } from '../auth/dto/auth-user.view';
 @Injectable()
 export class EmailVerificationService implements OnModuleInit {
   constructor(
-    @Inject(Services.USER) private readonly userService: ClientService,
+    @Inject(Services.USER) private readonly userService: EventClientService,
     @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: ClientService,
+    private readonly notificationClient: EventClientService,
     private readonly emailVerificationRepository: EmailVerificationRepository,
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,

@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import {
-  ClientService,
+  EventClientService,
   NotificationMessage,
   Services,
   UserMessage,
@@ -25,9 +25,9 @@ import { AuthErrorCode, throwAuthBadRequest } from '../auth-exception';
 export class PasswordResetService implements OnModuleInit {
   constructor(
     private readonly passwordResetTokenService: PasswordResetTokenService,
-    @Inject(Services.USER) private readonly userService: ClientService,
+    @Inject(Services.USER) private readonly userService: EventClientService,
     @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: ClientService,
+    private readonly notificationClient: EventClientService,
     private readonly sessionService: SessionService,
     private readonly twoFactorService: TwoFactorService,
   ) {}

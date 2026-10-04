@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit, forwardRef } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import {
-  ClientService,
+  EventClientService,
   NotificationMessage,
   Services,
   UserQuery,
@@ -27,9 +27,9 @@ export class TwoFactorService implements OnModuleInit {
     private readonly twoFactorRepository: TwoFactorRepository,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
-    @Inject(Services.USER) private readonly userService: ClientService,
+    @Inject(Services.USER) private readonly userService: EventClientService,
     @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: ClientService,
+    private readonly notificationClient: EventClientService,
     private readonly sessionService: SessionService,
   ) {}
 

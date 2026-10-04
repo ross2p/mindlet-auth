@@ -8,7 +8,7 @@ import { randomBytes, randomInt } from 'crypto';
 import * as argon2 from 'argon2';
 import {
   AuthEvent,
-  ClientService,
+  EventClientService,
   NotificationMessage,
   Services,
 } from '@ross2p/common';
@@ -30,9 +30,9 @@ export class TwoFactorMethodService {
     private readonly methodRepository: TwoFactorMethodRepository,
     private readonly backupCodeRepository: BackupCodeRepository,
     private readonly reauthService: ReauthService,
-    @Inject(Services.USER) private readonly userClient: ClientService,
+    @Inject(Services.USER) private readonly userClient: EventClientService,
     @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: ClientService,
+    private readonly notificationClient: EventClientService,
   ) {}
 
   private assertSupported(type: SecondFactorMethodType): void {

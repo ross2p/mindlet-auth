@@ -1,7 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   AuthenticatedUser,
-  ClientService,
+  EventClientService,
   Services,
   UserQuery,
 } from '@ross2p/common';
@@ -18,7 +18,7 @@ export class AuthService {
   constructor(
     private readonly userTokenService: UserTokenService,
     @Inject(Services.USER)
-    private readonly userService: ClientService,
+    private readonly userService: EventClientService,
     private readonly sessionService: SessionService,
   ) {}
 
