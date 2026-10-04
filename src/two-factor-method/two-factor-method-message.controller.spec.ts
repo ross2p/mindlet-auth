@@ -51,7 +51,7 @@ describe('TwoFactorMethodMessageController wiring (AC-18/19/30/31/32)', () => {
   });
 
   it('forwards regenerate requests', async () => {
-    await controller.regenerateBackupCodes({ userId: 'u1' });
+    await controller.regenerateBackupCodesKafka({ userId: 'u1' });
     expect(twoFactorMethodService.regenerateBackupCodes).toHaveBeenCalledWith(
       'u1',
     );

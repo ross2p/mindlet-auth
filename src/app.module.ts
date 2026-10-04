@@ -21,7 +21,6 @@ import { TokenModule } from './token/token.module';
 import { ReauthModule } from './reauth/reauth.module';
 import { TwoFactorMethodModule } from './two-factor-method/two-factor-method.module';
 import { AccountDeletionSyncModule } from './account-deletion-sync/account-deletion-sync.module';
-import { RpcModule } from './rpc/rpc.module';
 
 @Module({
   imports: [
@@ -39,7 +38,6 @@ import { RpcModule } from './rpc/rpc.module';
     ReauthModule,
     TwoFactorMethodModule,
     AccountDeletionSyncModule,
-    RpcModule,
   ],
   providers: [
     {

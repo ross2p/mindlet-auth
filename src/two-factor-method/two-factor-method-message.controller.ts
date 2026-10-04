@@ -3,17 +3,33 @@ import {
   confirmEnableSecondFactorMethodMessageSchema,
   disableSecondFactorMethodMessageSchema,
 } from '@ross2p/types';
-import { Controller } from '@nestjs/common';
+import { Controller, UseFilters } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { AuthMessage, ValidationPipe, DataPayload } from '@ross2p/common';
+import {
+  AuthCommonProto,
+  AuthMessage,
+  AuthTwoFactorMethodProto,
+  ValidationPipe,
+  DataPayload,
+  GrpcErrorFilter,
+  GrpcGlobalFilter,
+  GrpcHttpExceptionFilter,
+} from '@ross2p/common';
 import { BeginEnableSecondFactorMethodDto } from './dto/begin-enable-second-factor-method.dto';
 import { ConfirmEnableSecondFactorMethodDto } from './dto/confirm-enable-second-factor-method.dto';
 import { DisableSecondFactorMethodDto } from './dto/disable-second-factor-method.dto';
 import { UserIdMessageDto } from './dto/user-id-message.dto';
 import { TwoFactorMethodService } from './two-factor-method.service';
+import {
+  toEnableTwoFactorMethodResult,
+  toTwoFactorMethodList,
+} from './two-factor-method.grpc-mapper';
 
 @Controller()
-export class TwoFactorMethodMessageController {
+@AuthTwoFactorMethodProto.TwoFactorMethodServiceControllerMethods()
+export class TwoFactorMethodMessageController
+  implements AuthTwoFactorMethodProto.TwoFactorMethodServiceController
+{
   constructor(
     private readonly twoFactorMethodService: TwoFactorMethodService,
   ) {}
@@ -54,7 +70,62 @@ export class TwoFactorMethodMessageController {
   }
 
   @MessagePattern(AuthMessage.BACKUP_CODES_REGENERATE)
-  regenerateBackupCodes(@DataPayload() data: UserIdMessageDto) {
+  regenerateBackupCodesKafka(@DataPayload() data: UserIdMessageDto) {
     return this.twoFactorMethodService.regenerateBackupCodes(data.userId);
+  }
+
+  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  async listTwoFactorMethods(
+    data: AuthCommonProto.UserIdRequest,
+  ): Promise<AuthTwoFactorMethodProto.TwoFactorMethodList> {
+    const methods = await this.twoFactorMethodService.listMethods(data.userId);
+    return toTwoFactorMethodList(methods);
+  }
+
+  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  async beginEnableTwoFactorMethod(
+    data: AuthTwoFactorMethodProto.BeginEnableTwoFactorMethodRequest,
+  ): Promise<AuthCommonProto.Empty> {
+    const dto = new ValidationPipe(
+      beginEnableSecondFactorMethodMessageSchema,
+    ).transform(data as BeginEnableSecondFactorMethodDto);
+    await this.twoFactorMethodService.beginEnable(dto.userId, dto.type);
+    return {};
+  }
+
+  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  async confirmEnableTwoFactorMethod(
+    data: AuthTwoFactorMethodProto.ConfirmEnableTwoFactorMethodRequest,
+  ): Promise<AuthTwoFactorMethodProto.EnableTwoFactorMethodResult> {
+    const dto = new ValidationPipe(
+      confirmEnableSecondFactorMethodMessageSchema,
+    ).transform(data as ConfirmEnableSecondFactorMethodDto);
+    const result = await this.twoFactorMethodService.confirmEnable(
+      dto.userId,
+      dto.type,
+      dto.code,
+    );
+    return toEnableTwoFactorMethodResult(result);
+  }
+
+  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  async disableTwoFactorMethod(
+    data: AuthTwoFactorMethodProto.DisableTwoFactorMethodRequest,
+  ): Promise<AuthCommonProto.Empty> {
+    const dto = new ValidationPipe(
+      disableSecondFactorMethodMessageSchema,
+    ).transform(data as DisableSecondFactorMethodDto);
+    await this.twoFactorMethodService.disable(dto.userId, dto.type);
+    return {};
+  }
+
+  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  async regenerateBackupCodes(
+    data: AuthCommonProto.UserIdRequest,
+  ): Promise<AuthTwoFactorMethodProto.EnableTwoFactorMethodResult> {
+    const result = await this.twoFactorMethodService.regenerateBackupCodes(
+      data.userId,
+    );
+    return toEnableTwoFactorMethodResult(result);
   }
 }

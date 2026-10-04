@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { GrpcOptions, KafkaOptions, Transport } from '@nestjs/microservices';
-import { RPC_PROTO_PACKAGE, RPC_PROTO_PATH } from '@ross2p/common';
+import { AUTH_GRPC_PACKAGES, AUTH_GRPC_PROTO_PATHS } from '@ross2p/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -35,8 +35,8 @@ async function bootstrap() {
   app.connectMicroservice<GrpcOptions>({
     transport: Transport.GRPC,
     options: {
-      package: RPC_PROTO_PACKAGE,
-      protoPath: RPC_PROTO_PATH,
+      package: AUTH_GRPC_PACKAGES,
+      protoPath: AUTH_GRPC_PROTO_PATHS,
       url: configService.get<string>('AUTH_GRPC_URL') ?? '0.0.0.0:50051',
     },
   });
