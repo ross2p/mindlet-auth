@@ -8,8 +8,8 @@ export function toAuthenticatedUserMessage(
     id: user.id,
     email: user.email,
     sessionId: user.sessionId,
-    twoFactorVerifiedAt: user.twoFactorVerifiedAt?.toISOString() ?? undefined,
-    emailVerifiedAt: user.emailVerifiedAt?.toISOString() ?? undefined,
+    twoFactorVerifiedAt: user.twoFactorVerifiedAt,
+    emailVerifiedAt: user.emailVerifiedAt,
   };
 }
 
@@ -22,13 +22,12 @@ export function toTokenPayload(
       id: dto.payload.id,
       email: dto.payload.email,
       sessionId: dto.payload.sessionId,
-      twoFactorVerifiedAt:
-        dto.payload.twoFactorVerifiedAt?.toISOString() ?? undefined,
-      emailVerifiedAt: dto.payload.emailVerifiedAt?.toISOString() ?? undefined,
-      type: dto.payload.type,
+      twoFactorVerifiedAt: dto.payload.twoFactorVerifiedAt,
+      emailVerifiedAt: dto.payload.emailVerifiedAt,
+      type: dto.payload.type as AuthCoreProto.TokenType,
       iat: dto.payload.iat,
       exp: dto.payload.exp,
     },
-    expiresAt: dto.expiresAt.toISOString(),
+    expiresAt: dto.expiresAt,
   };
 }

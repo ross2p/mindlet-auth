@@ -8,20 +8,19 @@ function toSessionMessage(
   return {
     id: session.id,
     userId: session.userId,
-    refreshTokenHash: session.refreshTokenHash ?? undefined,
+    refreshTokenHash: session.refreshTokenHash,
     provider: session.provider,
-    userAgent: session.userAgent ?? undefined,
-    ipAddress: session.ipAddress ?? undefined,
-    deviceLabel: session.deviceLabel ?? undefined,
-    timezone: session.timezone ?? undefined,
-    refreshAt: session.refreshAt.toISOString(),
-    expiresAt: session.expiresAt.toISOString(),
-    lastUsedAt: session.lastUsedAt.toISOString(),
-    revokedAt: session.revokedAt?.toISOString() ?? undefined,
-    revokedReason: session.revokedReason ?? undefined,
-    createdAt: session.createdAt.toISOString(),
-    twoFactorVerifiedAt:
-      session.twoFactorVerifiedAt?.toISOString() ?? undefined,
+    userAgent: session.userAgent,
+    ipAddress: session.ipAddress,
+    deviceLabel: session.deviceLabel,
+    timezone: session.timezone,
+    refreshAt: session.refreshAt,
+    expiresAt: session.expiresAt,
+    lastUsedAt: session.lastUsedAt,
+    revokedAt: session.revokedAt,
+    revokedReason: session.revokedReason,
+    createdAt: session.createdAt,
+    twoFactorVerifiedAt: session.twoFactorVerifiedAt,
   };
 }
 

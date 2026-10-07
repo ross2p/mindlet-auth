@@ -8,7 +8,7 @@ export function toEmailVerificationMessage(
     id: dto.id,
     userId: dto.userId,
     attempts: dto.attempts,
-    createdAt: dto.createdAt.toISOString(),
-    updatedAt: dto.updatedAt.toISOString(),
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   };
 }

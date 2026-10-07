@@ -11,8 +11,8 @@ export function toTwoFactorMethodList(
       userId: method.userId,
       type: method.type,
       enabled: method.enabled,
-      createdAt: method.createdAt.toISOString(),
-      updatedAt: method.updatedAt.toISOString(),
+      createdAt: method.createdAt,
+      updatedAt: method.updatedAt,
     })),
   };
 }
