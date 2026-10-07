@@ -7,9 +7,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
     markEmailVerified: jest.fn(),
   };
   const notificationClient = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
+    sendMailConfirmation: jest.fn().mockResolvedValue(undefined),
   };
   const emailVerificationRepository = {
     createEmailVerificationCode: jest.fn().mockResolvedValue({
@@ -72,7 +70,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     });
     expect(result).not.toHaveProperty('code');
-    expect(notificationClient.sendAndReturnPromise).toHaveBeenCalled();
+    expect(notificationClient.sendMailConfirmation).toHaveBeenCalled();
   });
 
   it('fails closed when notification is unavailable (AC-01)', async () => {
@@ -85,7 +83,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       email: 'user-a1b2@example.test',
       emailVerifiedAt: null,
     });
-    notificationClient.sendAndReturnPromise.mockRejectedValue(
+    notificationClient.sendMailConfirmation.mockRejectedValue(
       new Error('mail down'),
     );
 

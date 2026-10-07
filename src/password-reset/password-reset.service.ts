@@ -1,42 +1,24 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  OnModuleInit,
-} from '@nestjs/common';
-import {
-  EventClientService,
-  NotificationMessage,
-  Services,
-} from '@ross2p/common';
-import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { NotificationGrpcClient } from '../notification-client/notification-grpc.client';
+import type { ChangePasswordType, ForgotPasswordType } from '@ross2p/types';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import type { AuthUserView } from '../auth/types/auth-user.view';
 import { UserClient } from '../user-client/user-client.service';
 import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './types/reset-password.dto';
 import { PasswordResetTokenService } from '../token/password-reset-token/password-reset-token.service';
 import { SessionService } from '../session/session.service';
 import { TwoFactorService } from '../two-factor/two-factor.service';
 import { AuthErrorCode, throwAuthBadRequest } from '../auth-exception';
 
 @Injectable()
-export class PasswordResetService implements OnModuleInit {
+export class PasswordResetService {
   constructor(
     private readonly passwordResetTokenService: PasswordResetTokenService,
     private readonly userClient: UserClient,
-    @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: EventClientService,
+    private readonly notificationClient: NotificationGrpcClient,
     private readonly sessionService: SessionService,
     private readonly twoFactorService: TwoFactorService,
   ) {}
-
-  async onModuleInit() {
-    this.notificationClient.subscribeToResponseOf(
-      NotificationMessage.SEND_PASSWORD_RESET,
-    );
-    await this.notificationClient.connect();
-  }
 
   private async findActiveUserByEmail(
     email: string,
@@ -55,20 +37,17 @@ export class PasswordResetService implements OnModuleInit {
   }
 
   /** AC-14 — always succeeds; email only when an active User exists. */
-  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+  async forgotPassword(dto: ForgotPasswordType): Promise<void> {
     const user = await this.findActiveUserByEmail(dto.email);
     if (!user) {
       return;
     }
 
     const { token } = await this.passwordResetTokenService.create(user.email);
-    await this.notificationClient.sendAndReturnPromise(
-      NotificationMessage.SEND_PASSWORD_RESET,
-      {
-        userId: user.id,
-        token,
-      },
-    );
+    await this.notificationClient.sendPasswordReset({
+      userId: user.id,
+      token,
+    });
   }
 
   /** AC-13 / AC-15 — consume token, update password, revoke all Sessions. */
@@ -160,7 +139,7 @@ export class PasswordResetService implements OnModuleInit {
   changePasswordFromDto(
     userId: string,
     sessionId: string,
-    dto: ChangePasswordDto,
+    dto: ChangePasswordType,
   ): Promise<void> {
     return this.changePassword({
       userId,

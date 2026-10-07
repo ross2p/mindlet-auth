@@ -19,7 +19,7 @@ export const AuthErrorCode = {
 export type AuthErrorCodeValue =
   (typeof AuthErrorCode)[keyof typeof AuthErrorCode];
 
-export type AuthErrorBody = {
+type AuthErrorBody = {
   code: AuthErrorCodeValue;
   message: string;
 };

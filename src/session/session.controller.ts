@@ -1,15 +1,13 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
+import { EventPattern, GrpcMethod } from '@nestjs/microservices';
 import {
   AuthCommonProto,
-  AuthMessage,
   AuthSessionProto,
   DataPayload,
+  UserEvent,
 } from '@ross2p/common';
-import { ListSessionsMessageDto } from './dto/list-sessions-message.dto';
-import { PageRequestSessionDto } from './dto/page-request-session.dto';
-import { SessionIdentityDto } from './dto/session-identity.dto';
-import { UserIdMessageDto } from './dto/user-id-message.dto';
+import { AccountDeletionEventDto } from './types/account-deletion-event.dto';
+import { PageRequestSessionDto } from './types/page-request-session.dto';
 import { SessionService } from './session.service';
 
 @Controller()
@@ -18,29 +16,14 @@ export class SessionController
 {
   constructor(private readonly sessionService: SessionService) {}
 
-  @MessagePattern(AuthMessage.SESSION_LIST)
-  listSessionsEvent(@DataPayload() data: ListSessionsMessageDto) {
-    const dto = Object.assign(new PageRequestSessionDto(), {
-      userId: data.userId,
-      pageNumber: data.pageNumber ?? 1,
-      pageSize: data.pageSize ?? 200,
-    });
-    return this.sessionService.findSessionsPageByUserId(dto);
-  }
-
-  @MessagePattern(AuthMessage.SESSION_SIGN_OUT)
-  signOutSessionEvent(@DataPayload() data: SessionIdentityDto) {
-    return this.sessionService.signOut(data.userId, data.sessionId, 'sign-out');
-  }
-
-  @MessagePattern(AuthMessage.SESSION_SIGN_OUT_ALL)
-  signOutAllSessionsEvent(@DataPayload() data: UserIdMessageDto) {
-    return this.sessionService.signOutAll(data.userId);
-  }
-
-  @MessagePattern(AuthMessage.SESSION_REVOKE)
-  revokeSessionEvent(@DataPayload() data: SessionIdentityDto) {
-    return this.sessionService.signOut(data.userId, data.sessionId, 'revoked');
+  /**
+   * Revokes every session for a deleted account (AC-23). The user service
+   * triggers the wider deletion cascade by emitting `user.deleted`; this is
+   * auth's own reaction to that same event.
+   */
+  @EventPattern(UserEvent.DELETED)
+  public onUserDeleted(@DataPayload() data: AccountDeletionEventDto) {
+    return this.sessionService.signOutAll(data.userId, 'account-deleted');
   }
 
   @GrpcMethod('SessionService', 'listSessions')

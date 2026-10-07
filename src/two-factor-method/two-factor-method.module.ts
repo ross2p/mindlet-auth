@@ -1,3 +1,4 @@
+import { NotificationClientModule } from '../notification-client/notification-grpc-client.module';
 import { Module } from '@nestjs/common';
 import { EventClientModule, Services } from '@ross2p/common';
 import { TwoFactorEnrollmentModule } from '../two-factor-enrollment/two-factor-enrollment.module';
@@ -12,7 +13,8 @@ import { TwoFactorMethodMessageController } from './two-factor-method-message.co
     TwoFactorEnrollmentModule,
     BackupCodeModule,
     ReauthModule,
-    EventClientModule.register(Services.USER, Services.NOTIFICATION),
+    EventClientModule.register(Services.USER),
+    NotificationClientModule,
   ],
   controllers: [TwoFactorMethodMessageController],
   providers: [TwoFactorMethodRepository, TwoFactorMethodService],

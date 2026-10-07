@@ -5,8 +5,8 @@ import {
   TWO_FACTOR_ATTEMPT_TTL_SECONDS,
   twoFactorUserFailKey,
 } from '../auth-challenge.constants';
-import { CreateTwoFactorCodeDto } from './dtos/create-two-factor-code.dto';
-import { UpdateTwoFactorCodeDto } from './dtos/update-two-factor-code.dto';
+import { CreateTwoFactorCodeDto } from './types/create-two-factor-code.dto';
+import { UpdateTwoFactorCodeDto } from './types/update-two-factor-code.dto';
 import { TwoFactorEntity } from './two-factor.entity';
 import { twoFactorEntitySchema } from './schemas/two-factor-entity.schema';
 

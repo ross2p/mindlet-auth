@@ -1,72 +1,40 @@
+import { NotificationGrpcClient } from '../notification-client/notification-grpc.client';
 import {
   BadRequestException,
-  Inject,
   Injectable,
-  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
-import {
-  EventClientService,
-  NotificationMessage,
-  Services,
-} from '@ross2p/common';
-import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { NotificationCoreProto } from '@ross2p/common';
+import type { AuthUserView } from '../auth/types/auth-user.view';
 import { UserClient } from '../user-client/user-client.service';
 import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
 import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repository';
 
 @Injectable()
-export class TwoFactorEnrollmentService implements OnModuleInit {
+export class TwoFactorEnrollmentService {
   constructor(
     private readonly enrollmentRepository: TwoFactorEnrollmentRepository,
     private readonly userClient: UserClient,
-    @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: EventClientService,
+    private readonly notificationClient: NotificationGrpcClient,
   ) {}
-
-  async onModuleInit() {
-    this.notificationClient.subscribeToResponseOf(
-      NotificationMessage.SEND_TWO_FACTOR,
-    );
-    await this.notificationClient.connect();
-  }
 
   private generateCode(): string {
     return randomInt(0, 1_000_000).toString().padStart(6, '0');
   }
 
-  private async loadUser(userId: string): Promise<AuthUserView> {
-    return toAuthUserView(await this.userClient.findUserById(userId));
-  }
-
-  async beginEnable(userId: string): Promise<void> {
-    const user = await this.loadUser(userId);
-    if (user.twoFactorEnabled) {
-      throw new BadRequestException(
-        'Two-factor authentication is already enabled for this account.',
-      );
-    }
+  /** Stores a fresh enrollment challenge for the user and returns its code. */
+  async createChallenge(userId: string): Promise<string> {
     const code = this.generateCode();
     await this.enrollmentRepository.createEnrollmentChallenge(userId, code);
-    await this.notificationClient.sendAndReturnPromise(
-      NotificationMessage.SEND_TWO_FACTOR,
-      {
-        userId,
-        code,
-        provider: 'EMAIL',
-      },
-    );
+    return code;
   }
 
-  async confirmEnable(userId: string, code: string): Promise<void> {
-    const user = await this.loadUser(userId);
-    if (user.twoFactorEnabled) {
-      throw new BadRequestException(
-        'Two-factor authentication is already enabled for this account.',
-      );
-    }
-
+  /**
+   * Checks `code` against the user's pending challenge, counting failed
+   * attempts. The challenge is consumed on success.
+   */
+  async verifyChallenge(userId: string, code: string): Promise<void> {
     const challenge = await this.enrollmentRepository.findByUserId(userId);
     if (!challenge) {
       throw new UnauthorizedException(
@@ -89,6 +57,36 @@ export class TwoFactorEnrollmentService implements OnModuleInit {
     }
 
     await this.enrollmentRepository.deleteByUserId(userId);
+  }
+
+  private async loadUser(userId: string): Promise<AuthUserView> {
+    return toAuthUserView(await this.userClient.findUserById(userId));
+  }
+
+  async beginEnable(userId: string): Promise<void> {
+    const user = await this.loadUser(userId);
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException(
+        'Two-factor authentication is already enabled for this account.',
+      );
+    }
+    const code = await this.createChallenge(userId);
+    await this.notificationClient.sendTwoFactor({
+      userId,
+      code,
+      provider: NotificationCoreProto.Provider.EMAIL,
+    });
+  }
+
+  async confirmEnable(userId: string, code: string): Promise<void> {
+    const user = await this.loadUser(userId);
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException(
+        'Two-factor authentication is already enabled for this account.',
+      );
+    }
+
+    await this.verifyChallenge(userId, code);
     await this.userClient.setTwoFactorEnabled({ userId, enabled: true });
   }
 

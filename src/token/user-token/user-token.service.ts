@@ -1,8 +1,10 @@
+import type {
+  RefreshPayloadDto,
+  TokensDto,
+  UserPayloadDto,
+} from '../types/token.types';
 import { Injectable } from '@nestjs/common';
-import { GenerateTokensDto } from '../../auth/dto/generate-tokens.dto';
-import { RefreshPayloadDto } from '../../auth/dto/refresh-payload.dto';
-import { TokensDto } from '../../auth/dto/tokens.dto';
-import { UserPayloadDto } from '../../auth/dto/user-payload.dto';
+import { GenerateTokensDto } from '../../auth/types/generate-tokens.dto';
 import { UserAccessTokenService } from './user-access-token.service';
 import { UserRefreshTokenService } from './user-refresh-token.service';
 import { ACCESS_PENDING_VERIFICATION_TTL_SECONDS } from '../token.constants';

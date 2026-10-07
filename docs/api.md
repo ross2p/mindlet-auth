@@ -4,9 +4,9 @@
 >
 > Product contract: [`docs/features/auth/contracts/openapi.yaml`](../../../../docs/features/auth/contracts/openapi.yaml)
 
-HTTP for Guests/Users is **not** served from this process (ADR-0004). Canonical REST lives on **gateway-web** under `/api/v1/auth`. This service exposes **Kafka `AuthMessage`** only.
+HTTP for Guests/Users is **not** served from this process (ADR-0004). Canonical REST lives on **gateway-web** under `/api/v1/auth`. This service exposes a **gRPC API** (contracts: `libs/common/src/protos/auth/*.proto`) plus one Kafka request pattern, `auth.user.validate`, used by `AuthGuard` in other services.
 
-The table below is the public HTTP surface (gateway-web). Handler files in this service are Kafka `*MessageController`s.
+The table below is the public HTTP surface (gateway-web). Handler files in this service are gRPC controllers (`@GrpcMethod`).
 
 ## REST endpoints (gateway-web)
 
@@ -45,4 +45,4 @@ Auth owns identity, login challenges, reset/sign-out/change-password. Enabling 2
 
 ## Tests
 
-See [`test/README.md`](../test/README.md) — mocked AC matrix always; HTTP e2e behind `AUTH_E2E=1`.
+`npm test` — mocked AC matrix (`src/auth-ac-matrix.spec.ts`) and unit specs. HTTP e2e lives in gateway-web.

@@ -2,21 +2,18 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { TwoFactorMethodService } from './two-factor-method.service';
 
 describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
-  const enrollmentRepository = {
-    createEnrollmentChallenge: jest.fn(),
-    findByUserId: jest.fn(),
-    updateEnrollmentChallenge: jest.fn(),
-    deleteByUserId: jest.fn(),
+  const enrollmentService = {
+    createChallenge: jest.fn(),
+    verifyChallenge: jest.fn(),
   };
   const methodRepository = {
     setEnabled: jest.fn(),
     findActiveByUserId: jest.fn(),
     findByUserAndType: jest.fn(),
   };
-  const backupCodeRepository = {
-    findUnusedByUserId: jest.fn(),
-    markUsed: jest.fn(),
-    replaceAllForUser: jest.fn(),
+  const backupCodeService = {
+    issueCodes: jest.fn(),
+    consume: jest.fn(),
   };
   const reauthService = {
     isVerified: jest.fn(),
@@ -24,18 +21,20 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
   };
   const userClient = { sendAndReturnPromise: jest.fn(), emitEvent: jest.fn() };
   const notificationClient = {
-    sendAndReturnPromise: jest.fn(),
-    emitEvent: jest.fn(),
+    sendTwoFactor: jest.fn(),
   };
 
   let service: TwoFactorMethodService;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    backupCodeService.issueCodes.mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) => `CODE${i}`),
+    );
     service = new TwoFactorMethodService(
-      enrollmentRepository as never,
+      enrollmentService as never,
       methodRepository as never,
-      backupCodeRepository as never,
+      backupCodeService as never,
       reauthService as never,
       userClient as never,
       notificationClient as never,
@@ -44,11 +43,7 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
 
   describe('confirmEnable', () => {
     it('first-ever enable issues Backup codes once and mirrors 2FA on (AC-18)', async () => {
-      enrollmentRepository.findByUserId.mockResolvedValue({
-        userId: 'u1',
-        code: '111111',
-        attempts: 0,
-      });
+      enrollmentService.verifyChallenge.mockResolvedValue(undefined);
       methodRepository.findActiveByUserId.mockResolvedValue([]);
 
       const result = await service.confirmEnable('u1', 'EMAIL_CODE', '111111');
@@ -58,10 +53,7 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
         'EMAIL_CODE',
         true,
       );
-      expect(backupCodeRepository.replaceAllForUser).toHaveBeenCalledWith(
-        'u1',
-        expect.arrayContaining([expect.any(String)]),
-      );
+      expect(backupCodeService.issueCodes).toHaveBeenCalledWith('u1');
       expect(result.backupCodes).toHaveLength(10);
       expect(userClient.emitEvent).toHaveBeenCalledWith(
         'auth.account.two_factor.enabled',
@@ -70,18 +62,14 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
     });
 
     it('a second method enable does not reissue Backup codes', async () => {
-      enrollmentRepository.findByUserId.mockResolvedValue({
-        userId: 'u1',
-        code: '111111',
-        attempts: 0,
-      });
+      enrollmentService.verifyChallenge.mockResolvedValue(undefined);
       methodRepository.findActiveByUserId.mockResolvedValue([
         { id: 'm1', userId: 'u1', type: 'EMAIL_CODE', enabled: true },
       ]);
 
       const result = await service.confirmEnable('u1', 'EMAIL_CODE', '111111');
 
-      expect(backupCodeRepository.replaceAllForUser).not.toHaveBeenCalled();
+      expect(backupCodeService.issueCodes).not.toHaveBeenCalled();
       expect(result.backupCodes).toBeUndefined();
     });
   });
@@ -145,7 +133,7 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
         UnauthorizedException,
       );
 
-      expect(backupCodeRepository.replaceAllForUser).not.toHaveBeenCalled();
+      expect(backupCodeService.issueCodes).not.toHaveBeenCalled();
     });
 
     it('invalidates the old set and issues a new one exactly once', async () => {
@@ -153,10 +141,7 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
 
       const result = await service.regenerateBackupCodes('u1');
 
-      expect(backupCodeRepository.replaceAllForUser).toHaveBeenCalledWith(
-        'u1',
-        expect.any(Array),
-      );
+      expect(backupCodeService.issueCodes).toHaveBeenCalledWith('u1');
       expect(result.backupCodes).toHaveLength(10);
     });
   });
@@ -176,7 +161,7 @@ describe('TwoFactorMethodService (AC-18/19/30/31/32)', () => {
 
   describe('consumeBackupCodeForReauth', () => {
     it('rejects when no unused code matches', async () => {
-      backupCodeRepository.findUnusedByUserId.mockResolvedValue([]);
+      backupCodeService.consume.mockResolvedValue(false);
 
       await expect(
         service.consumeBackupCodeForReauth('u1', 'WRONG-CODE'),

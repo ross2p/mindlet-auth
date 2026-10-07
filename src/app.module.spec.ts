@@ -7,12 +7,12 @@ describe('AppModule (ADR-0004)', () => {
     expect(src).not.toMatch(/RouterModule/);
   });
 
-  it('registers Kafka CredentialsController, not HTTP routes', () => {
+  it('registers gRPC CredentialsController, not HTTP routes', () => {
     const controller = readFileSync(
       join(__dirname, 'credentials/credentials.controller.ts'),
       'utf8',
     );
-    expect(controller).toMatch(/MessagePattern/);
+    expect(controller).toMatch(/GrpcMethod/);
     expect(controller).not.toMatch(/@Post\(/);
     const src = readFileSync(
       join(__dirname, 'credentials/credentials.module.ts'),

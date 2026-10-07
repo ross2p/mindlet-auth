@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import type { Session } from '.prisma/client-auth';
-import { PageRequestSessionDto } from './dto/page-request-session.dto';
-import { UpdateSessionRecordDto } from './dto/update-session-record.dto';
-import { BulkUpdateSessionsDto } from './dto/bulk-update-sessions.dto';
-import { CreateSessionDto } from './dto/create-session.dto';
+import { PageRequestSessionDto } from './types/page-request-session.dto';
+import { UpdateSessionRecordDto } from './types/update-session-record.dto';
+import { BulkUpdateSessionsDto } from './types/bulk-update-sessions.dto';
+import { CreateSessionDto } from './types/create-session.dto';
 
 @Injectable()
 export class SessionRepository {

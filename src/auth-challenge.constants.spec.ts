@@ -5,8 +5,6 @@ import {
   TWO_FACTOR_ATTEMPT_WINDOW_MS,
   TWO_FACTOR_ATTEMPT_TTL_SECONDS,
   SESSION_REFRESH_TTL_MS,
-  LOGIN_RATE_LIMIT,
-  FORGOT_PASSWORD_RATE_LIMIT,
   isTwoFactorAttemptsExceeded,
   sessionExpiresAt,
   twoFactorUserFailKey,
@@ -40,13 +38,5 @@ describe('auth challenge NFR constants (AC-05/11/15)', () => {
     );
     expect(expires.getTime() - now.getTime()).toBe(SESSION_REFRESH_TTL_MS);
     expect(expires.getTime()).toBeGreaterThan(now.getTime());
-  });
-
-  it('exposes request-source rate limits for login and forgot-password', () => {
-    expect(LOGIN_RATE_LIMIT).toEqual({ limit: 10, ttlMs: 15 * 60 * 1000 });
-    expect(FORGOT_PASSWORD_RATE_LIMIT).toEqual({
-      limit: 5,
-      ttlMs: 15 * 60 * 1000,
-    });
   });
 });

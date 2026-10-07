@@ -1,4 +1,5 @@
-import type { TwoFactorChallengeType } from '@ross2p/types';
+import { AuthTwoFactorProto } from '@ross2p/common';
+import type { TwoFactorChallengeDto } from '../token/types/token.types';
 
 /**
  * Login-time method picker (AC-10). Setup lives in profile-and-settings;
@@ -9,16 +10,22 @@ export function buildTwoFactorChallenge(input: {
   twoFactorEnabled: boolean;
   totpConfigured?: boolean;
   backupCodesAvailable?: boolean;
-}): TwoFactorChallengeType | null {
+}): TwoFactorChallengeDto | null {
   if (!input.twoFactorEnabled) {
     return null;
   }
   return {
     required: true,
     methods: [
-      { id: 'email', available: true },
-      { id: 'totp', available: input.totpConfigured === true },
-      { id: 'backup', available: input.backupCodesAvailable === true },
+      { id: AuthTwoFactorProto.TwoFactorMethodId.email, available: true },
+      {
+        id: AuthTwoFactorProto.TwoFactorMethodId.totp,
+        available: input.totpConfigured === true,
+      },
+      {
+        id: AuthTwoFactorProto.TwoFactorMethodId.backup,
+        available: input.backupCodesAvailable === true,
+      },
     ],
   };
 }

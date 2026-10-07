@@ -1,41 +1,27 @@
+import { NotificationGrpcClient } from '../notification-client/notification-grpc.client';
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
-  OnModuleInit,
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import type { EmailVerificationType } from '@ross2p/types';
-import {
-  EventClientService,
-  NotificationMessage,
-  Services,
-} from '@ross2p/common';
+import type { TokenPayloadDto } from '../token/types/token.types';
 import { EmailVerificationRepository } from './email-verification.repository';
 import { AuthService } from '../auth/auth.service';
-import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
 import { UserClient } from '../user-client/user-client.service';
 import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
 
 @Injectable()
-export class EmailVerificationService implements OnModuleInit {
+export class EmailVerificationService {
   constructor(
     private readonly userClient: UserClient,
-    @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: EventClientService,
+    private readonly notificationClient: NotificationGrpcClient,
     private readonly emailVerificationRepository: EmailVerificationRepository,
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,
   ) {}
-
-  async onModuleInit() {
-    this.notificationClient.subscribeToResponseOf(
-      NotificationMessage.SEND_MAIL_CONFIRMATION,
-    );
-    await this.notificationClient.connect();
-  }
 
   private generateCode(): string {
     return randomInt(0, 1_000_000).toString().padStart(6, '0');
@@ -58,13 +44,10 @@ export class EmailVerificationService implements OnModuleInit {
         userId: user.id,
         code: this.generateCode(),
       });
-    await this.notificationClient.sendAndReturnPromise(
-      NotificationMessage.SEND_MAIL_CONFIRMATION,
-      {
-        userId: user.id,
-        code,
-      },
-    );
+    await this.notificationClient.sendMailConfirmation({
+      userId: user.id,
+      code,
+    });
     return emailVerification;
   }
 

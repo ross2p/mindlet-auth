@@ -13,9 +13,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     verifyPassword: jest.fn(),
   };
   const notificationClient = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+    sendPasswordReset: jest.fn(),
   };
   const sessionService = {
     signOutAll: jest.fn(),
@@ -46,7 +44,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       ).resolves.toBeUndefined();
 
       expect(passwordResetTokenService.create).not.toHaveBeenCalled();
-      expect(notificationClient.sendAndReturnPromise).not.toHaveBeenCalled();
+      expect(notificationClient.sendPasswordReset).not.toHaveBeenCalled();
     });
 
     it('returns without leaking when user is soft-deleted', async () => {
@@ -67,7 +65,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
         email: 'user@example.test',
       });
       passwordResetTokenService.create.mockResolvedValue({ token: 'tok' });
-      notificationClient.sendAndReturnPromise.mockResolvedValue(undefined);
+      notificationClient.sendPasswordReset.mockResolvedValue(undefined);
 
       await expect(
         service.forgotPassword({ email: 'user@example.test' }),
@@ -76,10 +74,10 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       expect(passwordResetTokenService.create).toHaveBeenCalledWith(
         'user@example.test',
       );
-      expect(notificationClient.sendAndReturnPromise).toHaveBeenCalledWith(
-        'email.send-password-reset',
-        { userId: 'u1', token: 'tok' },
-      );
+      expect(notificationClient.sendPasswordReset).toHaveBeenCalledWith({
+        userId: 'u1',
+        token: 'tok',
+      });
     });
 
     it('fails closed when notification is down for a known user', async () => {
@@ -88,7 +86,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
         email: 'user@example.test',
       });
       passwordResetTokenService.create.mockResolvedValue({ token: 'tok' });
-      notificationClient.sendAndReturnPromise.mockRejectedValue(
+      notificationClient.sendPasswordReset.mockRejectedValue(
         new Error('mail down'),
       );
 

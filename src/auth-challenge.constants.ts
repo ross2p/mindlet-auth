@@ -1,4 +1,4 @@
-/** Spec §6 NFR — challenge TTLs and rate limits (auth Redis / throttler). */
+/** Spec §6 NFR — challenge TTLs and attempt limits (auth Redis). */
 
 export const EMAIL_VERIFICATION_CODE_TTL_SECONDS = 30 * 60; // ≤ 30 min
 export const PASSWORD_RESET_TTL_SECONDS = 60 * 60; // ≤ 1 hour
@@ -19,16 +19,6 @@ export function sessionExpiresAt(now = new Date()): Date {
 export function twoFactorUserFailKey(userId: string): string {
   return `fail:${userId}`;
 }
-
-export const LOGIN_RATE_LIMIT = {
-  limit: 10,
-  ttlMs: 15 * 60 * 1000,
-} as const;
-
-export const FORGOT_PASSWORD_RATE_LIMIT = {
-  limit: 5,
-  ttlMs: 15 * 60 * 1000,
-} as const;
 
 export function isTwoFactorAttemptsExceeded(attempts: number): boolean {
   return attempts >= TWO_FACTOR_MAX_FAILED_ATTEMPTS;

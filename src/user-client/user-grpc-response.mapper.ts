@@ -1,5 +1,5 @@
 import { UserCoreProto } from '@ross2p/common';
-import type { AuthUserView } from '../auth/dto/auth-user.view';
+import type { AuthUserView } from '../auth/types/auth-user.view';
 
 /**
  * proto3 message-typed fields (Timestamp here) can never be guaranteed

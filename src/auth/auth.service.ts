@@ -1,13 +1,12 @@
+import type { RefreshTokenType } from '@ross2p/types';
+import type { TokenPayloadDto, TokensDto } from '../token/types/token.types';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthenticatedUser } from '@ross2p/common';
 import { SessionService } from '../session/session.service';
 import { UserTokenService } from '../token/user-token/user-token.service';
 import { UserClient } from '../user-client/user-client.service';
 import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
-import type { AuthUserView } from './dto/auth-user.view';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { TokenPayloadDto } from './dto/token-payload.dto';
-import { TokensDto } from './dto/tokens.dto';
+import type { AuthUserView } from './types/auth-user.view';
 import { assertRefreshAllowed } from './refresh-gate.util';
 
 @Injectable()
@@ -48,7 +47,7 @@ export class AuthService {
     };
   }
 
-  async refreshAccessToken(dto: RefreshTokenDto): Promise<TokenPayloadDto> {
+  async refreshAccessToken(dto: RefreshTokenType): Promise<TokenPayloadDto> {
     const payload = this.userTokenService.verifyRefreshToken(dto.refreshToken);
 
     const session = await this.sessionService.findActiveSessionByIdOrThrow(

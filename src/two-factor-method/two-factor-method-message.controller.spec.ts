@@ -1,4 +1,7 @@
+import { AuthTwoFactorMethodProto } from '@ross2p/common';
 import { TwoFactorMethodMessageController } from './two-factor-method-message.controller';
+
+const USER_ID = '018f0000-0000-7000-8000-000000000001';
 
 describe('TwoFactorMethodMessageController wiring (AC-18/19/30/31/32)', () => {
   const twoFactorMethodService = {
@@ -17,43 +20,52 @@ describe('TwoFactorMethodMessageController wiring (AC-18/19/30/31/32)', () => {
   });
 
   it('forwards list requests', async () => {
-    await controller.listMethodsEvent({ userId: 'u1' });
-    expect(twoFactorMethodService.listMethods).toHaveBeenCalledWith('u1');
+    twoFactorMethodService.listMethods.mockResolvedValue([]);
+    await controller.listTwoFactorMethods({ userId: USER_ID });
+    expect(twoFactorMethodService.listMethods).toHaveBeenCalledWith(USER_ID);
   });
 
   it('forwards begin-enable requests', async () => {
-    await controller.beginEnableEvent({ userId: 'u1', type: 'EMAIL_CODE' });
+    await controller.beginEnableTwoFactorMethod({
+      userId: USER_ID,
+      type: AuthTwoFactorMethodProto.SecondFactorMethodType.EMAIL_CODE,
+    });
     expect(twoFactorMethodService.beginEnable).toHaveBeenCalledWith(
-      'u1',
+      USER_ID,
       'EMAIL_CODE',
     );
   });
 
   it('forwards confirm-enable requests', async () => {
-    await controller.confirmEnableEvent({
-      userId: 'u1',
-      type: 'EMAIL_CODE',
+    twoFactorMethodService.confirmEnable.mockResolvedValue({});
+    await controller.confirmEnableTwoFactorMethod({
+      userId: USER_ID,
+      type: AuthTwoFactorMethodProto.SecondFactorMethodType.EMAIL_CODE,
       code: '111111',
     });
     expect(twoFactorMethodService.confirmEnable).toHaveBeenCalledWith(
-      'u1',
+      USER_ID,
       'EMAIL_CODE',
       '111111',
     );
   });
 
   it('forwards disable requests', async () => {
-    await controller.disableEvent({ userId: 'u1', type: 'EMAIL_CODE' });
+    await controller.disableTwoFactorMethod({
+      userId: USER_ID,
+      type: AuthTwoFactorMethodProto.SecondFactorMethodType.EMAIL_CODE,
+    });
     expect(twoFactorMethodService.disable).toHaveBeenCalledWith(
-      'u1',
+      USER_ID,
       'EMAIL_CODE',
     );
   });
 
   it('forwards regenerate requests', async () => {
-    await controller.regenerateBackupCodesEvent({ userId: 'u1' });
+    twoFactorMethodService.regenerateBackupCodes.mockResolvedValue({});
+    await controller.regenerateBackupCodes({ userId: USER_ID });
     expect(twoFactorMethodService.regenerateBackupCodes).toHaveBeenCalledWith(
-      'u1',
+      USER_ID,
     );
   });
 });

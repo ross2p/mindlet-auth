@@ -1,17 +1,11 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
 import {
   AuthCommonProto,
   AuthCoreProto,
-  AuthMessage,
   AuthTwoFactorProto,
-  DataPayload,
 } from '@ross2p/common';
-import { SessionIdMessageDto } from './dto/session-id-message.dto';
-import { TwoFactorSessionMessageDto } from './dto/two-factor-session-message.dto';
-import { VerifyTwoFactorMessageDto } from './dto/verify-two-factor-message.dto';
 import { TwoFactorService } from './two-factor.service';
-import { toTwoFactorChallenge } from './two-factor.grpc-mapper';
 
 @Controller()
 export class TwoFactorController
@@ -19,32 +13,12 @@ export class TwoFactorController
 {
   constructor(private readonly twoFactorService: TwoFactorService) {}
 
-  @MessagePattern(AuthMessage.TWO_FACTOR_METHODS)
-  listTwoFactorMethodsEvent(@DataPayload() data: TwoFactorSessionMessageDto) {
-    return this.twoFactorService.listTwoFactorMethods(data);
-  }
-
-  @MessagePattern(AuthMessage.TWO_FACTOR_RESEND)
-  resendTwoFactorCodeEvent(@DataPayload() data: SessionIdMessageDto) {
-    return this.twoFactorService.sendCode({ sessionId: data.sessionId });
-  }
-
-  @MessagePattern(AuthMessage.TWO_FACTOR_VERIFY)
-  verifyTwoFactorEvent(@DataPayload() data: VerifyTwoFactorMessageDto) {
-    return this.twoFactorService.checkCode({
-      userId: data.userId,
-      sessionId: data.sessionId,
-      code: data.code,
-      method: data.method,
-    });
-  }
-
   @GrpcMethod('TwoFactorService', 'findTwoFactorChallenge')
   async findTwoFactorChallenge(
     data: AuthTwoFactorProto.TwoFactorSessionRequest,
   ): Promise<AuthTwoFactorProto.TwoFactorChallenge> {
     const result = await this.twoFactorService.listTwoFactorMethods(data);
-    return toTwoFactorChallenge(result);
+    return { required: true, methods: result.methods };
   }
 
   @GrpcMethod('TwoFactorService', 'resendTwoFactorCode')
@@ -65,12 +39,6 @@ export class TwoFactorController
       code: data.code,
       method: data.method,
     });
-    return {
-      ...result,
-      payload: {
-        ...result.payload,
-        type: result.payload.type as AuthCoreProto.TokenType,
-      },
-    };
+    return result;
   }
 }

@@ -11,10 +11,10 @@ describe('ReauthController wiring (AC-15)', () => {
     jest.clearAllMocks();
   });
 
-  it('forwards verify requests to ReauthService.verifyPassword', async () => {
+  it('maps verify requests to ReauthService.verifyPassword', async () => {
     reauthService.verifyPassword.mockResolvedValue(true);
 
-    const result = await controller.verifyEvent({
+    const result = await controller.verifyReauth({
       userId: '018f0000-0000-7000-8000-000000000001',
       password: 'correct-password',
     });
@@ -23,19 +23,19 @@ describe('ReauthController wiring (AC-15)', () => {
       '018f0000-0000-7000-8000-000000000001',
       'correct-password',
     );
-    expect(result).toBe(true);
+    expect(result).toEqual({ verified: true });
   });
 
-  it('forwards check requests to ReauthService.isVerified', async () => {
+  it('maps check requests to ReauthService.isVerified', async () => {
     reauthService.isVerified.mockResolvedValue(false);
 
-    const result = await controller.checkEvent({
+    const result = await controller.checkReauth({
       userId: '018f0000-0000-7000-8000-000000000001',
     });
 
     expect(reauthService.isVerified).toHaveBeenCalledWith(
       '018f0000-0000-7000-8000-000000000001',
     );
-    expect(result).toBe(false);
+    expect(result).toEqual({ verified: false });
   });
 });

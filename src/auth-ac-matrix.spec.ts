@@ -1,3 +1,4 @@
+import { AuthTwoFactorProto } from '@ross2p/common';
 /**
  * AC matrix — mocked integration suite (runs without Docker).
  * Covers the happy-path chain from test-plan.md when ephemeral Postgres/Redis
@@ -42,12 +43,16 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
     it('returns method picker when 2FA is enabled', () => {
       const challenge = buildTwoFactorChallenge({ twoFactorEnabled: true });
       expect(challenge?.required).toBe(true);
-      expect(challenge?.methods.find((m) => m.id === 'email')?.available).toBe(
-        true,
-      );
-      expect(challenge?.methods.find((m) => m.id === 'totp')?.available).toBe(
-        false,
-      );
+      expect(
+        challenge?.methods.find(
+          (m) => m.id === AuthTwoFactorProto.TwoFactorMethodId.email,
+        )?.available,
+      ).toBe(true);
+      expect(
+        challenge?.methods.find(
+          (m) => m.id === AuthTwoFactorProto.TwoFactorMethodId.totp,
+        )?.available,
+      ).toBe(false);
     });
 
     it('keeps access closed while 2FA challenge is pending', () => {
@@ -128,9 +133,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       verifyPassword: jest.fn(),
     };
     const notificationClient = {
-      subscribeToResponseOf: jest.fn(),
-      connect: jest.fn(),
-      sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
+      sendMailConfirmation: jest.fn().mockResolvedValue(undefined),
     };
     const sessionService = {
       signOutAll: jest.fn(),

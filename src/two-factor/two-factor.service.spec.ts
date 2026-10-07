@@ -18,9 +18,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
     findUserById: jest.fn(),
   };
   const notificationClient = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
+    sendTwoFactor: jest.fn().mockResolvedValue(undefined),
   };
   const sessionService = {
     findActiveSessionByIdOrThrow: jest.fn(),
@@ -55,12 +53,12 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
     await service.sendCode({ sessionId: 's1' });
 
     expect(twoFactorRepository.createTwoFactorCode).toHaveBeenCalled();
-    const notifyCall = notificationClient.sendAndReturnPromise.mock
-      .calls[0] as [string, { userId: string; code: string; provider: string }];
-    expect(notifyCall[0]).toBe('notification.send-two-factor');
-    expect(notifyCall[1].userId).toBe('u1');
-    expect(notifyCall[1].provider).toBe('EMAIL');
-    expect(notifyCall[1].code).toMatch(/^\d{6}$/);
+    const [request] = notificationClient.sendTwoFactor.mock.calls[0] as [
+      { userId: string; code: string; provider: string },
+    ];
+    expect(request.userId).toBe('u1');
+    expect(request.provider).toBe('EMAIL');
+    expect(request.code).toMatch(/^\d{6}$/);
   });
 
   it('returns 429 with auth.two_factor_attempts_exceeded after 5 fails per User (AC-11)', async () => {

@@ -26,7 +26,7 @@ src/
 │   └── dto/
 ├── credentials/
 │   ├── credentials.module.ts
-│   ├── credentials.controller.ts   Kafka login/register
+│   ├── credentials.controller.ts   gRPC login/register
 │   └── credentials.service.ts      emailLogin / emailRegister
 ├── two-factor/
 │   ├── two-factor.module.ts
@@ -39,7 +39,7 @@ src/
 │   └── ...
 ├── email-verification/
 │   ├── email-verification.module.ts
-│   ├── email-verification.controller.ts Kafka resend / verify
+│   ├── email-verification.controller.ts gRPC resend / verify
 │   ├── email-verification.service.ts
 │   ├── email-verification.repository.ts CacheService — code + attempts per userId
 │   └── email-verification.constants.ts EMAIL_VERIFICATION_TTL_SECONDS
