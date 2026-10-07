@@ -14,15 +14,11 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
   const authService = {
     refreshAccessTokenBySessionId: jest.fn(),
   };
-  const userService = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+  const userClient = {
+    findUserById: jest.fn(),
   };
   const notificationClient = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
+    sendTwoFactor: jest.fn().mockResolvedValue(undefined),
   };
   const sessionService = {
     findActiveSessionByIdOrThrow: jest.fn(),
@@ -37,7 +33,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
     service = new TwoFactorService(
       twoFactorRepository as never,
       authService as never,
-      userService as never,
+      userClient as never,
       notificationClient as never,
       sessionService as never,
     );
@@ -49,7 +45,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
       userId: 'u1',
       twoFactorVerifiedAt: null,
     });
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       twoFactorEnabled: true,
     });
@@ -57,12 +53,12 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
     await service.sendCode({ sessionId: 's1' });
 
     expect(twoFactorRepository.createTwoFactorCode).toHaveBeenCalled();
-    const notifyCall = notificationClient.sendAndReturnPromise.mock
-      .calls[0] as [string, { userId: string; code: string; provider: string }];
-    expect(notifyCall[0]).toBe('notification.send-two-factor');
-    expect(notifyCall[1].userId).toBe('u1');
-    expect(notifyCall[1].provider).toBe('EMAIL');
-    expect(notifyCall[1].code).toMatch(/^\d{6}$/);
+    const [request] = notificationClient.sendTwoFactor.mock.calls[0] as [
+      { userId: string; code: string; provider: string },
+    ];
+    expect(request.userId).toBe('u1');
+    expect(request.provider).toBe('EMAIL');
+    expect(request.code).toMatch(/^\d{6}$/);
   });
 
   it('returns 429 with auth.two_factor_attempts_exceeded after 5 fails per User (AC-11)', async () => {
@@ -129,7 +125,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
   });
 
   it('rejects an unavailable 2FA method (AC-10)', async () => {
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       twoFactorEnabled: true,
     });

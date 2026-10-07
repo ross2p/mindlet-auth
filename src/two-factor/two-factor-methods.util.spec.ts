@@ -1,3 +1,4 @@
+import { AuthTwoFactorProto } from '@ross2p/common';
 import { buildTwoFactorChallenge } from './two-factor-methods.util';
 
 describe('buildTwoFactorChallenge (AC-10)', () => {
@@ -22,8 +23,10 @@ describe('buildTwoFactorChallenge (AC-10)', () => {
       twoFactorEnabled: true,
       backupCodesAvailable: true,
     });
-    expect(challenge?.methods.find((m) => m.id === 'backup')?.available).toBe(
-      true,
-    );
+    expect(
+      challenge?.methods.find(
+        (m) => m.id === AuthTwoFactorProto.TwoFactorMethodId.backup,
+      )?.available,
+    ).toBe(true);
   });
 });

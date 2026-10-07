@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { checkExists } from '@ross2p/common';
-import { AuthEvent, ClientService, Services } from '@ross2p/common';
+import { AuthEvent, EventClientService, Services } from '@ross2p/common';
 import { SessionRepository } from './session.repository';
-import { CreateSessionDto } from './dto/create-session.dto';
-import { UpdateSessionDto } from './dto/update-session.dto';
-import { PageRequestSessionDto } from './dto/page-request-session.dto';
-import { BulkUpdateSessionsDto } from './dto/bulk-update-sessions.dto';
+import { CreateSessionDto } from './types/create-session.dto';
+import { UpdateSessionDto } from './types/update-session.dto';
+import { PageRequestSessionDto } from './types/page-request-session.dto';
+import { BulkUpdateSessionsDto } from './types/bulk-update-sessions.dto';
 import { sha256Hex } from '../utils/sha256.util';
 import { SessionEntity } from './session.entity';
 
@@ -18,7 +18,7 @@ import { SessionEntity } from './session.entity';
 export class SessionService {
   constructor(
     private readonly sessionRepository: SessionRepository,
-    @Inject(Services.USER) private readonly userEventClient: ClientService,
+    @Inject(Services.USER) private readonly userEventClient: EventClientService,
   ) {}
 
   createSession(createSessionDto: CreateSessionDto) {

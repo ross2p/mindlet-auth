@@ -1,7 +1,7 @@
-import type { TokenType } from './token-type.enum';
+import type { AuthCoreProto } from '@ross2p/common';
 
 export interface Payload {
-  type: TokenType;
+  type: AuthCoreProto.TokenType;
   iat?: number;
   exp?: number;
 }

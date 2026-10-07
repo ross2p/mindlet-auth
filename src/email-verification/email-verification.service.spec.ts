@@ -2,15 +2,12 @@ import { ConflictException, BadRequestException } from '@nestjs/common';
 import { EmailVerificationService } from './email-verification.service';
 
 describe('EmailVerificationService (AC-01/04/05/06)', () => {
-  const userService = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+  const userClient = {
+    findUserById: jest.fn(),
+    markEmailVerified: jest.fn(),
   };
   const notificationClient = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
+    sendMailConfirmation: jest.fn().mockResolvedValue(undefined),
   };
   const emailVerificationRepository = {
     createEmailVerificationCode: jest.fn().mockResolvedValue({
@@ -40,7 +37,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new EmailVerificationService(
-      userService as never,
+      userClient as never,
       notificationClient as never,
       emailVerificationRepository as never,
       authService as never,
@@ -53,7 +50,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       id: 's1',
       userId: 'u1',
     });
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       email: 'user-a1b2@example.test',
       emailVerifiedAt: null,
@@ -73,7 +70,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     });
     expect(result).not.toHaveProperty('code');
-    expect(notificationClient.sendAndReturnPromise).toHaveBeenCalled();
+    expect(notificationClient.sendMailConfirmation).toHaveBeenCalled();
   });
 
   it('fails closed when notification is unavailable (AC-01)', async () => {
@@ -81,12 +78,12 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       id: 's1',
       userId: 'u1',
     });
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       email: 'user-a1b2@example.test',
       emailVerifiedAt: null,
     });
-    notificationClient.sendAndReturnPromise.mockRejectedValue(
+    notificationClient.sendMailConfirmation.mockRejectedValue(
       new Error('mail down'),
     );
 
@@ -100,7 +97,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       id: 's1',
       userId: 'u1',
     });
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       emailVerifiedAt: new Date(),
     });
@@ -111,7 +108,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
   });
 
   it('rejects invalid verification code (AC-05)', async () => {
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       emailVerifiedAt: null,
     });
@@ -131,12 +128,11 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
   });
 
   it('marks verified and refreshes tokens on valid code (AC-04)', async () => {
-    userService.sendAndReturnPromise
-      .mockResolvedValueOnce({
-        id: 'u1',
-        emailVerifiedAt: null,
-      })
-      .mockResolvedValueOnce({});
+    userClient.findUserById.mockResolvedValueOnce({
+      id: 'u1',
+      emailVerifiedAt: null,
+    });
+    userClient.markEmailVerified.mockResolvedValueOnce({});
     emailVerificationRepository.findEmailVerificationCodeByUserId.mockResolvedValue(
       { code: '123456', id: 'ev-1', attempts: 0 },
     );

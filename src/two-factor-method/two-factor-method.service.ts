@@ -1,38 +1,35 @@
+import { NotificationGrpcClient } from '../notification-client/notification-grpc.client';
 import {
   BadRequestException,
   Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { randomBytes, randomInt } from 'crypto';
-import * as argon2 from 'argon2';
 import {
   AuthEvent,
-  ClientService,
-  NotificationMessage,
+  EventClientService,
   Services,
+  NotificationCoreProto,
 } from '@ross2p/common';
 import type { EnableSecondFactorMethodResultType } from '@ross2p/types';
 import type { SecondFactorMethodType } from '.prisma/client-auth';
-import { TwoFactorEnrollmentRepository } from '../two-factor-enrollment/two-factor-enrollment.repository';
+import { TwoFactorEnrollmentService } from '../two-factor-enrollment/two-factor-enrollment.service';
 import { TwoFactorMethodRepository } from './two-factor-method.repository';
-import { BackupCodeRepository } from '../backup-code/backup-code.repository';
+import { BackupCodeService } from '../backup-code/backup-code.service';
 import { ReauthService } from '../reauth/reauth.service';
 import { TwoFactorMethodEntity } from './two-factor-method.entity';
 
 const SUPPORTED_METHODS: SecondFactorMethodType[] = ['EMAIL_CODE'];
-const BACKUP_CODE_COUNT = 10;
 
 @Injectable()
 export class TwoFactorMethodService {
   constructor(
-    private readonly enrollmentRepository: TwoFactorEnrollmentRepository,
+    private readonly enrollmentService: TwoFactorEnrollmentService,
     private readonly methodRepository: TwoFactorMethodRepository,
-    private readonly backupCodeRepository: BackupCodeRepository,
+    private readonly backupCodeService: BackupCodeService,
     private readonly reauthService: ReauthService,
-    @Inject(Services.USER) private readonly userClient: ClientService,
-    @Inject(Services.NOTIFICATION)
-    private readonly notificationClient: ClientService,
+    @Inject(Services.USER) private readonly userClient: EventClientService,
+    private readonly notificationClient: NotificationGrpcClient,
   ) {}
 
   private assertSupported(type: SecondFactorMethodType): void {
@@ -41,16 +38,6 @@ export class TwoFactorMethodService {
         `This second factor method is not yet supported: ${type}`,
       );
     }
-  }
-
-  private generateCode(): string {
-    return randomInt(0, 1_000_000).toString().padStart(6, '0');
-  }
-
-  private generateBackupCodes(): string[] {
-    return Array.from({ length: BACKUP_CODE_COUNT }, () =>
-      randomBytes(5).toString('hex').toUpperCase(),
-    );
   }
 
   public listMethods(userId: string): Promise<TwoFactorMethodEntity[]> {
@@ -62,12 +49,12 @@ export class TwoFactorMethodService {
     type: SecondFactorMethodType,
   ): Promise<void> {
     this.assertSupported(type);
-    const code = this.generateCode();
-    await this.enrollmentRepository.createEnrollmentChallenge(userId, code);
-    await this.notificationClient.sendAndReturnPromise(
-      NotificationMessage.SEND_TWO_FACTOR,
-      { userId, code, provider: 'EMAIL' },
-    );
+    const code = await this.enrollmentService.createChallenge(userId);
+    await this.notificationClient.sendTwoFactor({
+      userId,
+      code,
+      provider: NotificationCoreProto.Provider.EMAIL,
+    });
   }
 
   /** First-ever active method issues Backup codes exactly once (AC-18). */
@@ -78,26 +65,7 @@ export class TwoFactorMethodService {
   ): Promise<EnableSecondFactorMethodResultType> {
     this.assertSupported(type);
 
-    const challenge = await this.enrollmentRepository.findByUserId(userId);
-    if (!challenge) {
-      throw new UnauthorizedException(
-        'This confirmation code is invalid or has expired',
-      );
-    }
-    if (challenge.attempts >= 5) {
-      await this.enrollmentRepository.deleteByUserId(userId);
-      throw new UnauthorizedException(
-        'Too many incorrect codes; start enabling this method again',
-      );
-    }
-    if (challenge.code !== code.trim()) {
-      await this.enrollmentRepository.updateEnrollmentChallenge({
-        userId,
-        attempts: challenge.attempts + 1,
-      });
-      throw new UnauthorizedException('The confirmation code is incorrect');
-    }
-    await this.enrollmentRepository.deleteByUserId(userId);
+    await this.enrollmentService.verifyChallenge(userId, code);
 
     const activeBefore = await this.methodRepository.findActiveByUserId(userId);
     await this.methodRepository.setEnabled(userId, type, true);
@@ -106,11 +74,7 @@ export class TwoFactorMethodService {
       return {};
     }
 
-    const backupCodes = this.generateBackupCodes();
-    const hashes = await Promise.all(
-      backupCodes.map((plain) => argon2.hash(plain)),
-    );
-    await this.backupCodeRepository.replaceAllForUser(userId, hashes);
+    const backupCodes = await this.backupCodeService.issueCodes(userId);
     this.userClient.emitEvent(AuthEvent.ACCOUNT_TWO_FACTOR_ENABLED, {
       userId,
     });
@@ -158,11 +122,7 @@ export class TwoFactorMethodService {
       );
     }
 
-    const backupCodes = this.generateBackupCodes();
-    const hashes = await Promise.all(
-      backupCodes.map((plain) => argon2.hash(plain)),
-    );
-    await this.backupCodeRepository.replaceAllForUser(userId, hashes);
+    const backupCodes = await this.backupCodeService.issueCodes(userId);
     return { backupCodes };
   }
 
@@ -174,13 +134,10 @@ export class TwoFactorMethodService {
     userId: string,
     code: string,
   ): Promise<void> {
-    const unused = await this.backupCodeRepository.findUnusedByUserId(userId);
-    for (const candidate of unused) {
-      if (await argon2.verify(candidate.codeHash, code.trim())) {
-        await this.backupCodeRepository.markUsed(candidate.id);
-        await this.reauthService.markVerified(userId);
-        return;
-      }
+    const consumed = await this.backupCodeService.consume(userId, code);
+    if (consumed) {
+      await this.reauthService.markVerified(userId);
+      return;
     }
     throw new BadRequestException(
       'This backup code is invalid or already used',

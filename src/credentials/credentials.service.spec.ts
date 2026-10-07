@@ -1,13 +1,16 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthErrorCode } from '../auth-error';
 import { SESSION_REFRESH_TTL_MS } from '../auth-challenge.constants';
 import { CredentialsService } from './credentials.service';
 
 describe('CredentialsService login (AC-07/08/10)', () => {
-  const userService = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+  const userClient = {
+    findUserByEmail: jest.fn(),
+    verifyPassword: jest.fn(),
   };
   const authService = {
     generateTokens: jest.fn().mockResolvedValue({
@@ -29,7 +32,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new CredentialsService(
-      userService as never,
+      userClient as never,
       authService as never,
       twoFactorService as never,
       sessionService as never,
@@ -38,25 +41,24 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   });
 
   it('returns twoFactorChallenge and closed platform access when 2FA is on', async () => {
-    userService.sendAndReturnPromise
-      .mockResolvedValueOnce({
-        id: 'u1',
-        email: 'user-a1b2@example.test',
-        firstName: 'T',
-        lastName: 'U',
-        username: 'u',
-        displayName: null,
-        bio: null,
-        avatarUrl: null,
-        bannerUrl: null,
-        phoneNumber: null,
-        accountId: null,
-        emailVerifiedAt: new Date(),
-        twoFactorEnabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .mockResolvedValueOnce(true);
+    userClient.findUserByEmail.mockResolvedValueOnce({
+      id: 'u1',
+      email: 'user-a1b2@example.test',
+      firstName: 'T',
+      lastName: 'U',
+      username: 'u',
+      displayName: null,
+      bio: null,
+      avatarUrl: null,
+      bannerUrl: null,
+      phoneNumber: null,
+      accountId: null,
+      emailVerifiedAt: new Date(),
+      twoFactorEnabled: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    userClient.verifyPassword.mockResolvedValueOnce({ valid: true });
 
     const result = await service.emailLogin({
       email: 'user-a1b2@example.test',
@@ -78,7 +80,9 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   });
 
   it('maps miss, bad password, and soft-delete to 401 auth.sign_in_unavailable (AC-08)', async () => {
-    userService.sendAndReturnPromise.mockResolvedValue(null);
+    userClient.findUserByEmail.mockRejectedValue(
+      new NotFoundException('User Not Found'),
+    );
 
     try {
       await service.emailLogin({
@@ -97,7 +101,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   });
 
   it('maps soft-deleted user Forbidden to sign-in unavailable (AC-08)', async () => {
-    userService.sendAndReturnPromise.mockRejectedValue(
+    userClient.findUserByEmail.mockRejectedValue(
       new ForbiddenException('Sign-in is unavailable for these credentials'),
     );
 

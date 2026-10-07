@@ -1,12 +1,12 @@
+import type { RefreshPayloadDto } from '../types/token.types';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { RefreshPayloadDto } from '../../auth/dto/refresh-payload.dto';
-import { TokenType } from '../token-type.enum';
+import { AuthCoreProto } from '@ross2p/common';
 import { BaseTokenService } from '../base-token.service';
 
 @Injectable()
 export class UserRefreshTokenService extends BaseTokenService<RefreshPayloadDto> {
-  protected readonly tokenType = TokenType.REFRESH;
+  protected readonly tokenType = AuthCoreProto.TokenType.refresh;
 
   constructor(jwtService: JwtService) {
     super(jwtService);

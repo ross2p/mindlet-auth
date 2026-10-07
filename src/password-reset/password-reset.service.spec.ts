@@ -6,15 +6,14 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     create: jest.fn(),
     consume: jest.fn(),
   };
-  const userService = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+  const userClient = {
+    findUserByEmail: jest.fn(),
+    findUserById: jest.fn(),
+    updateUserPrivateData: jest.fn(),
+    verifyPassword: jest.fn(),
   };
   const notificationClient = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+    sendPasswordReset: jest.fn(),
   };
   const sessionService = {
     signOutAll: jest.fn(),
@@ -29,7 +28,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     jest.clearAllMocks();
     service = new PasswordResetService(
       passwordResetTokenService as never,
-      userService as never,
+      userClient as never,
       notificationClient as never,
       sessionService as never,
       twoFactorService as never,
@@ -38,20 +37,18 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
 
   describe('forgotPassword (AC-14)', () => {
     it('returns without leaking when user is missing', async () => {
-      userService.sendAndReturnPromise.mockRejectedValue(
-        new Error('not found'),
-      );
+      userClient.findUserByEmail.mockRejectedValue(new Error('not found'));
 
       await expect(
         service.forgotPassword({ email: 'missing@example.test' }),
       ).resolves.toBeUndefined();
 
       expect(passwordResetTokenService.create).not.toHaveBeenCalled();
-      expect(notificationClient.sendAndReturnPromise).not.toHaveBeenCalled();
+      expect(notificationClient.sendPasswordReset).not.toHaveBeenCalled();
     });
 
     it('returns without leaking when user is soft-deleted', async () => {
-      userService.sendAndReturnPromise.mockRejectedValue(
+      userClient.findUserByEmail.mockRejectedValue(
         new ForbiddenException('Sign-in is unavailable for these credentials'),
       );
 
@@ -63,12 +60,12 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
 
     it('creates token and notifies when user exists', async () => {
-      userService.sendAndReturnPromise.mockResolvedValue({
+      userClient.findUserByEmail.mockResolvedValue({
         id: 'u1',
         email: 'user@example.test',
       });
       passwordResetTokenService.create.mockResolvedValue({ token: 'tok' });
-      notificationClient.sendAndReturnPromise.mockResolvedValue(undefined);
+      notificationClient.sendPasswordReset.mockResolvedValue(undefined);
 
       await expect(
         service.forgotPassword({ email: 'user@example.test' }),
@@ -77,19 +74,19 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       expect(passwordResetTokenService.create).toHaveBeenCalledWith(
         'user@example.test',
       );
-      expect(notificationClient.sendAndReturnPromise).toHaveBeenCalledWith(
-        'email.send-password-reset',
-        { userId: 'u1', token: 'tok' },
-      );
+      expect(notificationClient.sendPasswordReset).toHaveBeenCalledWith({
+        userId: 'u1',
+        token: 'tok',
+      });
     });
 
     it('fails closed when notification is down for a known user', async () => {
-      userService.sendAndReturnPromise.mockResolvedValue({
+      userClient.findUserByEmail.mockResolvedValue({
         id: 'u1',
         email: 'user@example.test',
       });
       passwordResetTokenService.create.mockResolvedValue({ token: 'tok' });
-      notificationClient.sendAndReturnPromise.mockRejectedValue(
+      notificationClient.sendPasswordReset.mockRejectedValue(
         new Error('mail down'),
       );
 
@@ -121,20 +118,21 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       passwordResetTokenService.consume.mockResolvedValue({
         email: 'user@example.test',
       });
-      userService.sendAndReturnPromise
-        .mockResolvedValueOnce({ id: 'u1', email: 'user@example.test' })
-        .mockResolvedValueOnce(undefined);
+      userClient.findUserByEmail.mockResolvedValueOnce({
+        id: 'u1',
+        email: 'user@example.test',
+      });
+      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await service.resetPassword({
         token: 'good',
         newPassword: 'Passw0rd2',
       });
 
-      expect(userService.sendAndReturnPromise).toHaveBeenNthCalledWith(
-        2,
-        expect.anything(),
-        { userId: 'u1', password: 'Passw0rd2' },
-      );
+      expect(userClient.updateUserPrivateData).toHaveBeenCalledWith({
+        userId: 'u1',
+        password: 'Passw0rd2',
+      });
       expect(sessionService.signOutAll).toHaveBeenCalledWith(
         'u1',
         'password-reset',
@@ -144,12 +142,11 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
 
   describe('changePassword (AC-14/15)', () => {
     it('rejects when current password is wrong, changing nothing and revoking nothing (AC-15)', async () => {
-      userService.sendAndReturnPromise
-        .mockResolvedValueOnce({
-          id: 'u1',
-          twoFactorEnabled: false,
-        })
-        .mockResolvedValueOnce(false);
+      userClient.findUserById.mockResolvedValueOnce({
+        id: 'u1',
+        twoFactorEnabled: false,
+      });
+      userClient.verifyPassword.mockResolvedValueOnce({ valid: false });
 
       await expect(
         service.changePassword({
@@ -161,12 +158,11 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
 
       expect(sessionService.signOutAll).not.toHaveBeenCalled();
-      // Only GET_BY_ID + VERIFY_PASSWORD were sent -- UserPrivateMessage.UPDATE never ran.
-      expect(userService.sendAndReturnPromise).toHaveBeenCalledTimes(2);
+      expect(userClient.updateUserPrivateData).not.toHaveBeenCalled();
     });
 
     it('requires 2FA code when enabled', async () => {
-      userService.sendAndReturnPromise.mockResolvedValueOnce({
+      userClient.findUserById.mockResolvedValueOnce({
         id: 'u1',
         twoFactorEnabled: true,
       });
@@ -182,13 +178,12 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
 
     it('updates password and revokes all sessions', async () => {
-      userService.sendAndReturnPromise
-        .mockResolvedValueOnce({
-          id: 'u1',
-          twoFactorEnabled: false,
-        })
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(undefined);
+      userClient.findUserById.mockResolvedValueOnce({
+        id: 'u1',
+        twoFactorEnabled: false,
+      });
+      userClient.verifyPassword.mockResolvedValueOnce({ valid: true });
+      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await service.changePassword({
         userId: 'u1',

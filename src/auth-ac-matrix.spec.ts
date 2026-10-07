@@ -1,3 +1,4 @@
+import { AuthTwoFactorProto } from '@ross2p/common';
 /**
  * AC matrix — mocked integration suite (runs without Docker).
  * Covers the happy-path chain from test-plan.md when ephemeral Postgres/Redis
@@ -42,12 +43,16 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
     it('returns method picker when 2FA is enabled', () => {
       const challenge = buildTwoFactorChallenge({ twoFactorEnabled: true });
       expect(challenge?.required).toBe(true);
-      expect(challenge?.methods.find((m) => m.id === 'email')?.available).toBe(
-        true,
-      );
-      expect(challenge?.methods.find((m) => m.id === 'totp')?.available).toBe(
-        false,
-      );
+      expect(
+        challenge?.methods.find(
+          (m) => m.id === AuthTwoFactorProto.TwoFactorMethodId.email,
+        )?.available,
+      ).toBe(true);
+      expect(
+        challenge?.methods.find(
+          (m) => m.id === AuthTwoFactorProto.TwoFactorMethodId.totp,
+        )?.available,
+      ).toBe(false);
     });
 
     it('keeps access closed while 2FA challenge is pending', () => {
@@ -121,15 +126,14 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       create: jest.fn(),
       consume: jest.fn(),
     };
-    const userService = {
-      subscribeToResponseOf: jest.fn(),
-      connect: jest.fn(),
-      sendAndReturnPromise: jest.fn(),
+    const userClient = {
+      findUserByEmail: jest.fn(),
+      findUserById: jest.fn(),
+      updateUserPrivateData: jest.fn(),
+      verifyPassword: jest.fn(),
     };
     const notificationClient = {
-      subscribeToResponseOf: jest.fn(),
-      connect: jest.fn(),
-      sendAndReturnPromise: jest.fn().mockResolvedValue(undefined),
+      sendMailConfirmation: jest.fn().mockResolvedValue(undefined),
     };
     const sessionService = {
       signOutAll: jest.fn(),
@@ -144,7 +148,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       jest.clearAllMocks();
       resetService = new PasswordResetService(
         passwordResetTokenService as never,
-        userService as never,
+        userClient as never,
         notificationClient as never,
         sessionService as never,
         twoFactorService as never,
@@ -152,7 +156,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
     });
 
     it('AC-14 — forgot succeeds identically for missing users', async () => {
-      userService.sendAndReturnPromise.mockRejectedValue(new Error('missing'));
+      userClient.findUserByEmail.mockRejectedValue(new Error('missing'));
       await expect(
         resetService.forgotPassword({ email: 'missing@example.test' }),
       ).resolves.toBeUndefined();
@@ -163,9 +167,11 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       passwordResetTokenService.consume.mockResolvedValue({
         email: 'user-a1b2@example.test',
       });
-      userService.sendAndReturnPromise
-        .mockResolvedValueOnce({ id: 'u1', email: 'user-a1b2@example.test' })
-        .mockResolvedValueOnce(undefined);
+      userClient.findUserByEmail.mockResolvedValueOnce({
+        id: 'u1',
+        email: 'user-a1b2@example.test',
+      });
+      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await resetService.resetPassword({
         token: 'tok',
@@ -179,10 +185,12 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
     });
 
     it('AC-17 — change password revokes all sessions', async () => {
-      userService.sendAndReturnPromise
-        .mockResolvedValueOnce({ id: 'u1', twoFactorEnabled: false })
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(undefined);
+      userClient.findUserById.mockResolvedValueOnce({
+        id: 'u1',
+        twoFactorEnabled: false,
+      });
+      userClient.verifyPassword.mockResolvedValueOnce({ valid: true });
+      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await resetService.changePassword({
         userId: 'u1',
@@ -228,19 +236,18 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
 
   describe('AC-08 — soft-delete denied at login', () => {
     it('maps Forbidden from user identity to sign-in unavailable', async () => {
-      const userService = {
-        subscribeToResponseOf: jest.fn(),
-        connect: jest.fn(),
-        sendAndReturnPromise: jest
+      const userClient = {
+        findUserByEmail: jest
           .fn()
           .mockRejectedValue(
             new ForbiddenException(
               'Sign-in is unavailable for these credentials',
             ),
           ),
+        verifyPassword: jest.fn(),
       };
       const credentials = new CredentialsService(
-        userService as never,
+        userClient as never,
         { generateTokens: jest.fn() } as never,
         { sendCode: jest.fn() } as never,
         { createSession: jest.fn() } as never,

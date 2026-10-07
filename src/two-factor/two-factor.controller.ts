@@ -1,32 +1,44 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
-import { AuthMessage, DataPayload } from '@ross2p/common';
-import { SessionIdMessageDto } from './dto/session-id-message.dto';
-import { TwoFactorSessionMessageDto } from './dto/two-factor-session-message.dto';
-import { VerifyTwoFactorMessageDto } from './dto/verify-two-factor-message.dto';
+import { GrpcMethod } from '@nestjs/microservices';
+import {
+  AuthCommonProto,
+  AuthCoreProto,
+  AuthTwoFactorProto,
+} from '@ross2p/common';
 import { TwoFactorService } from './two-factor.service';
 
 @Controller()
-export class TwoFactorController {
+export class TwoFactorController
+  implements AuthTwoFactorProto.TwoFactorServiceController
+{
   constructor(private readonly twoFactorService: TwoFactorService) {}
 
-  @MessagePattern(AuthMessage.TWO_FACTOR_METHODS)
-  listTwoFactorMethods(@DataPayload() data: TwoFactorSessionMessageDto) {
-    return this.twoFactorService.listTwoFactorMethods(data);
+  @GrpcMethod('TwoFactorService', 'findTwoFactorChallenge')
+  async findTwoFactorChallenge(
+    data: AuthTwoFactorProto.TwoFactorSessionRequest,
+  ): Promise<AuthTwoFactorProto.TwoFactorChallenge> {
+    const result = await this.twoFactorService.listTwoFactorMethods(data);
+    return { required: true, methods: result.methods };
   }
 
-  @MessagePattern(AuthMessage.TWO_FACTOR_RESEND)
-  resendTwoFactorCode(@DataPayload() data: SessionIdMessageDto) {
-    return this.twoFactorService.sendCode({ sessionId: data.sessionId });
+  @GrpcMethod('TwoFactorService', 'resendTwoFactorCode')
+  async resendTwoFactorCode(
+    data: AuthCommonProto.SessionIdRequest,
+  ): Promise<AuthCommonProto.Empty> {
+    await this.twoFactorService.sendCode({ sessionId: data.sessionId });
+    return {};
   }
 
-  @MessagePattern(AuthMessage.TWO_FACTOR_VERIFY)
-  verifyTwoFactor(@DataPayload() data: VerifyTwoFactorMessageDto) {
-    return this.twoFactorService.checkCode({
+  @GrpcMethod('TwoFactorService', 'verifyTwoFactorCode')
+  async verifyTwoFactorCode(
+    data: AuthTwoFactorProto.VerifyTwoFactorCodeRequest,
+  ): Promise<AuthCoreProto.TokenPayload> {
+    const result = await this.twoFactorService.checkCode({
       userId: data.userId,
       sessionId: data.sessionId,
       code: data.code,
       method: data.method,
     });
+    return result;
   }
 }

@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   HttpException,
   HttpStatus,
   UnauthorizedException,
@@ -24,13 +23,6 @@ export function throwAuthConflict(
   message: string,
 ): never {
   throw new ConflictException(authError(code, message));
-}
-
-export function throwAuthForbidden(
-  code: AuthErrorCodeValue,
-  message: string,
-): never {
-  throw new ForbiddenException(authError(code, message));
 }
 
 export function throwAuthUnauthorized(
