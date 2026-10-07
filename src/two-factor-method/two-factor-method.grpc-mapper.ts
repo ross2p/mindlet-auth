@@ -5,16 +5,7 @@ import { TwoFactorMethodEntity } from './two-factor-method.entity';
 export function toTwoFactorMethodList(
   methods: TwoFactorMethodEntity[],
 ): AuthTwoFactorMethodProto.TwoFactorMethodList {
-  return {
-    methods: methods.map((method) => ({
-      id: method.id,
-      userId: method.userId,
-      type: method.type,
-      enabled: method.enabled,
-      createdAt: method.createdAt,
-      updatedAt: method.updatedAt,
-    })),
-  };
+  return { methods };
 }
 
 export function toEnableTwoFactorMethodResult(

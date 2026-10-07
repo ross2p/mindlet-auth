@@ -9,7 +9,7 @@ import {
 } from '@ross2p/common';
 import { refreshTokenSchema } from '@ross2p/types';
 import { AuthService } from './auth.service';
-import { toAuthenticatedUserMessage, toTokenPayload } from './auth.grpc-mapper';
+import { toTokenPayload } from './auth.grpc-mapper';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { accessTokenSchema } from './dto/access-token.schema';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -41,8 +41,7 @@ export class AuthController implements AuthCoreProto.AuthCoreServiceController {
     const { accessToken } = new ValidationPipe(accessTokenSchema).transform(
       data,
     );
-    const user = await this.authService.validateUserByToken(accessToken);
-    return toAuthenticatedUserMessage(user);
+    return this.authService.validateUserByToken(accessToken);
   }
 
   @GrpcMethod('AuthCoreService', 'refreshToken')

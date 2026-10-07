@@ -11,7 +11,6 @@ import { PageRequestSessionDto } from './dto/page-request-session.dto';
 import { SessionIdentityDto } from './dto/session-identity.dto';
 import { UserIdMessageDto } from './dto/user-id-message.dto';
 import { SessionService } from './session.service';
-import { toSessionPage } from './session.grpc-mapper';
 
 @Controller()
 export class SessionController
@@ -53,8 +52,7 @@ export class SessionController
       pageNumber: data.pageNumber ?? 1,
       pageSize: data.pageSize ?? 200,
     });
-    const page = await this.sessionService.findSessionsPageByUserId(dto);
-    return toSessionPage(page);
+    return this.sessionService.findSessionsPageByUserId(dto);
   }
 
   @GrpcMethod('SessionService', 'signOutSession')

@@ -1,55 +1,30 @@
 import { AuthCredentialsProto, AuthCoreProto } from '@ross2p/common';
 import { UserTokensDto } from './dto/user-tokens.dto';
 
+/**
+ * UserTokensDto already matches AuthCredentialsProto.UserTokens field-for-field
+ * except each payload's `type`: see auth.grpc-mapper.ts's toTokenPayload for why
+ * that one needs a cast.
+ */
 export function toUserTokens(
   dto: UserTokensDto,
 ): AuthCredentialsProto.UserTokens {
   return {
-    user: {
-      id: dto.user.id,
-      email: dto.user.email,
-      firstName: dto.user.firstName,
-      lastName: dto.user.lastName,
-      username: dto.user.username,
-      displayName: dto.user.displayName,
-      bio: dto.user.bio,
-      avatarUrl: dto.user.avatarUrl,
-      bannerUrl: dto.user.bannerUrl,
-      phoneNumber: dto.user.phoneNumber,
-      accountId: dto.user.accountId,
-      emailVerifiedAt: dto.user.emailVerifiedAt,
-      twoFactorEnabled: dto.user.twoFactorEnabled,
-      createdAt: dto.user.createdAt,
-      updatedAt: dto.user.updatedAt,
-    },
-    is2faEnabled: dto.is2faEnabled,
-    platformAccessOpen: dto.platformAccessOpen,
-    sessionId: dto.sessionId,
+    ...dto,
     twoFactorChallenge: dto.twoFactorChallenge ?? null,
     accessToken: {
-      token: dto.accessToken.token,
+      ...dto.accessToken,
       payload: {
-        id: dto.accessToken.payload.id,
-        email: dto.accessToken.payload.email,
-        sessionId: dto.accessToken.payload.sessionId,
-        twoFactorVerifiedAt: dto.accessToken.payload.twoFactorVerifiedAt,
-        emailVerifiedAt: dto.accessToken.payload.emailVerifiedAt,
+        ...dto.accessToken.payload,
         type: dto.accessToken.payload.type as AuthCoreProto.TokenType,
-        iat: dto.accessToken.payload.iat,
-        exp: dto.accessToken.payload.exp,
       },
-      expiresAt: dto.accessToken.expiresAt,
     },
     refreshToken: {
-      token: dto.refreshToken.token,
+      ...dto.refreshToken,
       payload: {
-        id: dto.refreshToken.payload.id,
-        sessionId: dto.refreshToken.payload.sessionId,
+        ...dto.refreshToken.payload,
         type: dto.refreshToken.payload.type as AuthCoreProto.TokenType,
-        iat: dto.refreshToken.payload.iat,
-        exp: dto.refreshToken.payload.exp,
       },
-      expiresAt: dto.refreshToken.expiresAt,
     },
   };
 }

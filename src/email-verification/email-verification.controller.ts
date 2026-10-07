@@ -11,7 +11,6 @@ import { toTokenPayload } from '../auth/auth.grpc-mapper';
 import { SessionIdMessageDto } from './dto/session-id-message.dto';
 import { VerifyEmailMessageDto } from './dto/verify-email-message.dto';
 import { EmailVerificationService } from './email-verification.service';
-import { toEmailVerificationMessage } from './email-verification.grpc-mapper';
 
 @Controller()
 export class EmailVerificationController
@@ -43,10 +42,9 @@ export class EmailVerificationController
   async resendEmailVerificationCode(
     data: AuthCommonProto.SessionIdRequest,
   ): Promise<AuthEmailVerificationProto.EmailVerification> {
-    const result = await this.emailVerificationService.sendCode({
+    return this.emailVerificationService.sendCode({
       sessionId: data.sessionId,
     });
-    return toEmailVerificationMessage(result);
   }
 
   @GrpcMethod('EmailVerificationService', 'verifyEmail')

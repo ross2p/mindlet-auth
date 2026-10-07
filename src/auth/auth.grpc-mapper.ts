@@ -1,33 +1,21 @@
-import { AuthCoreProto, AuthenticatedUser } from '@ross2p/common';
+import { AuthCoreProto } from '@ross2p/common';
 import { TokenPayloadDto } from './dto/token-payload.dto';
 
-export function toAuthenticatedUserMessage(
-  user: AuthenticatedUser,
-): AuthCoreProto.AuthenticatedUserMessage {
-  return {
-    id: user.id,
-    email: user.email,
-    sessionId: user.sessionId,
-    twoFactorVerifiedAt: user.twoFactorVerifiedAt,
-    emailVerifiedAt: user.emailVerifiedAt,
-  };
-}
-
+/**
+ * TokenPayloadDto already matches AuthCoreProto.TokenPayload field-for-field
+ * except `payload.type`: this app's TokenType is a plain string-literal union
+ * ('access' | 'refresh'), while the proto's is a real TS enum with the same
+ * values — string enums aren't structurally assignable from a literal union
+ * even when the values match, so that's the one field that needs a cast.
+ */
 export function toTokenPayload(
   dto: TokenPayloadDto,
 ): AuthCoreProto.TokenPayload {
   return {
-    token: dto.token,
+    ...dto,
     payload: {
-      id: dto.payload.id,
-      email: dto.payload.email,
-      sessionId: dto.payload.sessionId,
-      twoFactorVerifiedAt: dto.payload.twoFactorVerifiedAt,
-      emailVerifiedAt: dto.payload.emailVerifiedAt,
+      ...dto.payload,
       type: dto.payload.type as AuthCoreProto.TokenType,
-      iat: dto.payload.iat,
-      exp: dto.payload.exp,
     },
-    expiresAt: dto.expiresAt,
   };
 }
