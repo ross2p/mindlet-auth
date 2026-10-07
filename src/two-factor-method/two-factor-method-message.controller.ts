@@ -84,7 +84,7 @@ export class TwoFactorMethodMessageController
   ): Promise<AuthCommonProto.Empty> {
     const dto = new ValidationPipe(
       beginEnableSecondFactorMethodMessageSchema,
-    ).transform(data as BeginEnableSecondFactorMethodDto);
+    ).transform(data);
     await this.twoFactorMethodService.beginEnable(dto.userId, dto.type);
     return {};
   }
@@ -95,7 +95,7 @@ export class TwoFactorMethodMessageController
   ): Promise<AuthTwoFactorMethodProto.EnableTwoFactorMethodResult> {
     const dto = new ValidationPipe(
       confirmEnableSecondFactorMethodMessageSchema,
-    ).transform(data as ConfirmEnableSecondFactorMethodDto);
+    ).transform(data);
     const result = await this.twoFactorMethodService.confirmEnable(
       dto.userId,
       dto.type,
@@ -110,7 +110,7 @@ export class TwoFactorMethodMessageController
   ): Promise<AuthCommonProto.Empty> {
     const dto = new ValidationPipe(
       disableSecondFactorMethodMessageSchema,
-    ).transform(data as DisableSecondFactorMethodDto);
+    ).transform(data);
     await this.twoFactorMethodService.disable(dto.userId, dto.type);
     return {};
   }

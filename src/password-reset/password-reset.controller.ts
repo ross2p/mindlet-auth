@@ -77,7 +77,7 @@ export class PasswordResetController
     await this.passwordResetService.changePasswordFromDto(
       data.userId,
       data.sessionId,
-      data as unknown as ChangePasswordMessageDto,
+      data,
     );
     return {};
   }

@@ -5,7 +5,12 @@ import { TwoFactorMethodEntity } from './two-factor-method.entity';
 export function toTwoFactorMethodList(
   methods: TwoFactorMethodEntity[],
 ): AuthTwoFactorMethodProto.TwoFactorMethodList {
-  return { methods };
+  return {
+    methods: methods.map((method) => ({
+      ...method,
+      type: method.type as AuthTwoFactorMethodProto.SecondFactorMethodType,
+    })),
+  };
 }
 
 export function toEnableTwoFactorMethodResult(

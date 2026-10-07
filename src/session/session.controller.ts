@@ -52,7 +52,14 @@ export class SessionController
       pageNumber: data.pageNumber ?? 1,
       pageSize: data.pageSize ?? 200,
     });
-    return this.sessionService.findSessionsPageByUserId(dto);
+    const page = await this.sessionService.findSessionsPageByUserId(dto);
+    return {
+      ...page,
+      data: page.data.map((session) => ({
+        ...session,
+        provider: session.provider as AuthSessionProto.SessionProvider,
+      })),
+    };
   }
 
   @GrpcMethod('SessionService', 'signOutSession')

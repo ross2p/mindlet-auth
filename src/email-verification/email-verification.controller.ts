@@ -7,7 +7,6 @@ import {
   AuthMessage,
   DataPayload,
 } from '@ross2p/common';
-import { toTokenPayload } from '../auth/auth.grpc-mapper';
 import { SessionIdMessageDto } from './dto/session-id-message.dto';
 import { VerifyEmailMessageDto } from './dto/verify-email-message.dto';
 import { EmailVerificationService } from './email-verification.service';
@@ -58,6 +57,12 @@ export class EmailVerificationController
       email: data.email,
       code: data.code,
     });
-    return toTokenPayload(result);
+    return {
+      ...result,
+      payload: {
+        ...result.payload,
+        type: result.payload.type as AuthCoreProto.TokenType,
+      },
+    };
   }
 }

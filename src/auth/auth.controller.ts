@@ -9,7 +9,6 @@ import {
 } from '@ross2p/common';
 import { refreshTokenSchema } from '@ross2p/types';
 import { AuthService } from './auth.service';
-import { toTokenPayload } from './auth.grpc-mapper';
 import { AccessTokenDto } from './dto/access-token.dto';
 import { accessTokenSchema } from './dto/access-token.schema';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -50,6 +49,12 @@ export class AuthController implements AuthCoreProto.AuthCoreServiceController {
   ): Promise<AuthCoreProto.TokenPayload> {
     const dto = new ValidationPipe(refreshTokenSchema).transform(data);
     const result = await this.authService.refreshAccessToken(dto);
-    return toTokenPayload(result);
+    return {
+      ...result,
+      payload: {
+        ...result.payload,
+        type: result.payload.type as AuthCoreProto.TokenType,
+      },
+    };
   }
 }

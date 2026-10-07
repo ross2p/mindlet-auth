@@ -7,7 +7,7 @@ export function toTwoFactorChallenge(result: {
   return {
     required: true,
     methods: result.methods.map((method) => ({
-      id: method.id,
+      id: method.id as AuthTwoFactorProto.TwoFactorMethodId,
       available: method.available,
     })),
   };

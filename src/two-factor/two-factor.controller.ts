@@ -12,7 +12,6 @@ import { TwoFactorSessionMessageDto } from './dto/two-factor-session-message.dto
 import { VerifyTwoFactorMessageDto } from './dto/verify-two-factor-message.dto';
 import { TwoFactorService } from './two-factor.service';
 import { toTwoFactorChallenge } from './two-factor.grpc-mapper';
-import { toTokenPayload } from '../auth/auth.grpc-mapper';
 
 @Controller()
 export class TwoFactorController
@@ -64,8 +63,14 @@ export class TwoFactorController
       userId: data.userId,
       sessionId: data.sessionId,
       code: data.code,
-      method: data.method as VerifyTwoFactorMessageDto['method'],
+      method: data.method,
     });
-    return toTokenPayload(result);
+    return {
+      ...result,
+      payload: {
+        ...result.payload,
+        type: result.payload.type as AuthCoreProto.TokenType,
+      },
+    };
   }
 }
