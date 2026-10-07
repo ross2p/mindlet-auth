@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
-import { UserClient } from '../user-grpc/user-client.service';
+import { UserClient } from '../user-client/user-client.service';
 import { REAUTH_TTL_SECONDS } from './reauth.constants';
 
 /**

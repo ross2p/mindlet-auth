@@ -12,8 +12,8 @@ import {
   Services,
 } from '@ross2p/common';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
-import { UserClient } from '../user-grpc/user-client.service';
-import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
+import { UserClient } from '../user-client/user-client.service';
+import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
 import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repository';
 
 @Injectable()

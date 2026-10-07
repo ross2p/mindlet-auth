@@ -34,4 +34,4 @@ import { UserClient } from './user-client.service';
   ],
   exports: [UserClient],
 })
-export class UserGrpcClientModule {}
+export class UserClientModule {}

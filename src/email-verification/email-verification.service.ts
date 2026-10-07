@@ -16,8 +16,8 @@ import { EmailVerificationRepository } from './email-verification.repository';
 import { AuthService } from '../auth/auth.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
-import { UserClient } from '../user-grpc/user-client.service';
-import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
+import { UserClient } from '../user-client/user-client.service';
+import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
 
 @Injectable()
 export class EmailVerificationService implements OnModuleInit {

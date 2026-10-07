@@ -3,11 +3,11 @@ import { CacheModule } from '../cache/cache.module';
 import { ReauthService } from './reauth.service';
 import { ReauthController } from './reauth.controller';
 import { REAUTH_TTL_SECONDS } from './reauth.constants';
-import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
+import { UserClientModule } from '../user-client/user-client.module';
 
 @Module({
   imports: [
-    UserGrpcClientModule,
+    UserClientModule,
     CacheModule.forFeature({
       prefix: 'auth:reauth',
       defaultTtlSeconds: REAUTH_TTL_SECONDS,

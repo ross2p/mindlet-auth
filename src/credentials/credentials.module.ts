@@ -3,11 +3,11 @@ import { CredentialsController } from './credentials.controller';
 import { CredentialsService } from './credentials.service';
 import { TwoFactorModule } from '../two-factor/two-factor.module';
 import { EmailVerificationModule } from '../email-verification/email-verification.module';
-import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
+import { UserClientModule } from '../user-client/user-client.module';
 
 @Module({
   controllers: [CredentialsController],
-  imports: [UserGrpcClientModule, TwoFactorModule, EmailVerificationModule],
+  imports: [UserClientModule, TwoFactorModule, EmailVerificationModule],
   providers: [CredentialsService],
   exports: [CredentialsService],
 })

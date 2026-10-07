@@ -11,8 +11,8 @@ import { AuthService } from '../auth/auth.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
-import { UserClient } from '../user-grpc/user-client.service';
-import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
+import { UserClient } from '../user-client/user-client.service';
+import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
 import { isTwoFactorAttemptsExceeded } from '../auth-challenge.constants';
 import {
   AuthErrorCode,

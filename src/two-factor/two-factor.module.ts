@@ -5,13 +5,13 @@ import { TwoFactorRepository } from './two-factor.repository';
 import { EventClientModule, Services } from '@ross2p/common';
 import { CacheModule } from '../cache/cache.module';
 import { TWO_FACTOR_CHALLENGE_TTL_SECONDS } from './two-factor.constants';
-import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
+import { UserClientModule } from '../user-client/user-client.module';
 
 @Module({
   controllers: [TwoFactorController],
   providers: [TwoFactorService, TwoFactorRepository],
   imports: [
-    UserGrpcClientModule,
+    UserClientModule,
     EventClientModule.register(Services.NOTIFICATION),
     CacheModule.forFeature({
       prefix: 'auth:2fa',
