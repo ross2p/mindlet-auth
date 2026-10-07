@@ -1,13 +1,10 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
   AuthCoreProto,
   AuthMessage,
   AuthenticatedUser,
   DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
   ValidationPipe,
 } from '@ross2p/common';
 import { refreshTokenSchema } from '@ross2p/types';
@@ -19,26 +16,25 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenPayloadDto } from './dto/token-payload.dto';
 
 @Controller()
-@AuthCoreProto.AuthCoreServiceControllerMethods()
 export class AuthController implements AuthCoreProto.AuthCoreServiceController {
   constructor(private readonly authService: AuthService) {}
 
   @MessagePattern(AuthMessage.USER_VALIDATE)
-  validateUserByToken(
+  validateUserByTokenEvent(
     @DataPayload(new ValidationPipe(accessTokenSchema)) data: AccessTokenDto,
   ): Promise<AuthenticatedUser> {
     return this.authService.validateUserByToken(data.accessToken);
   }
 
   @MessagePattern(AuthMessage.REFRESH)
-  refreshAccessToken(
+  refreshAccessTokenEvent(
     @DataPayload(new ValidationPipe(refreshTokenSchema))
     refreshTokenDto: RefreshTokenDto,
   ): Promise<TokenPayloadDto> {
     return this.authService.refreshAccessToken(refreshTokenDto);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('AuthCoreService', 'validateUser')
   async validateUser(
     data: AuthCoreProto.ValidateUserRequest,
   ): Promise<AuthCoreProto.AuthenticatedUserMessage> {
@@ -49,7 +45,7 @@ export class AuthController implements AuthCoreProto.AuthCoreServiceController {
     return toAuthenticatedUserMessage(user);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('AuthCoreService', 'refreshToken')
   async refreshToken(
     data: AuthCoreProto.RefreshTokenRequest,
   ): Promise<AuthCoreProto.TokenPayload> {

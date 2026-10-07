@@ -1,13 +1,10 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
   AuthCommonProto,
   AuthMessage,
   AuthTwoFactorEnrollmentProto,
   DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
 } from '@ross2p/common';
 import { ConfirmTwoFactorMessageDto } from './dto/confirm-two-factor-message.dto';
 import { DisableTwoFactorMessageDto } from './dto/disable-two-factor-message.dto';
@@ -15,7 +12,6 @@ import { UserIdMessageDto } from './dto/user-id-message.dto';
 import { TwoFactorEnrollmentService } from './two-factor-enrollment.service';
 
 @Controller()
-@AuthTwoFactorEnrollmentProto.TwoFactorEnrollmentServiceControllerMethods()
 export class TwoFactorEnrollmentController
   implements AuthTwoFactorEnrollmentProto.TwoFactorEnrollmentServiceController
 {
@@ -24,12 +20,12 @@ export class TwoFactorEnrollmentController
   ) {}
 
   @MessagePattern(AuthMessage.TWO_FACTOR_ENABLE)
-  enableTwoFactorKafka(@DataPayload() data: UserIdMessageDto) {
+  enableTwoFactorEvent(@DataPayload() data: UserIdMessageDto) {
     return this.twoFactorEnrollmentService.beginEnable(data.userId);
   }
 
   @MessagePattern(AuthMessage.TWO_FACTOR_CONFIRM)
-  confirmTwoFactor(@DataPayload() data: ConfirmTwoFactorMessageDto) {
+  confirmTwoFactorEvent(@DataPayload() data: ConfirmTwoFactorMessageDto) {
     return this.twoFactorEnrollmentService.confirmEnable(
       data.userId,
       data.code,
@@ -37,11 +33,11 @@ export class TwoFactorEnrollmentController
   }
 
   @MessagePattern(AuthMessage.TWO_FACTOR_DISABLE)
-  disableTwoFactor(@DataPayload() data: DisableTwoFactorMessageDto) {
+  disableTwoFactorEvent(@DataPayload() data: DisableTwoFactorMessageDto) {
     return this.twoFactorEnrollmentService.disable(data.userId, data.password);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('TwoFactorEnrollmentService', 'enableTwoFactor')
   async enableTwoFactor(
     data: AuthCommonProto.UserIdRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -49,7 +45,7 @@ export class TwoFactorEnrollmentController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('TwoFactorEnrollmentService', 'confirmTwoFactorEnrollment')
   async confirmTwoFactorEnrollment(
     data: AuthTwoFactorEnrollmentProto.ConfirmTwoFactorEnrollmentRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -57,7 +53,7 @@ export class TwoFactorEnrollmentController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('TwoFactorEnrollmentService', 'disableTwoFactorEnrollment')
   async disableTwoFactorEnrollment(
     data: AuthTwoFactorEnrollmentProto.DisableTwoFactorEnrollmentRequest,
   ): Promise<AuthCommonProto.Empty> {

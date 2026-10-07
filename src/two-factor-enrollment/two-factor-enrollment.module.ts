@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TwoFactorEnrollmentController } from './two-factor-enrollment.controller';
 import { TwoFactorEnrollmentService } from './two-factor-enrollment.service';
 import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repository';
-import { ClientModule, Services } from '@ross2p/common';
+import { EventClientModule, Services } from '@ross2p/common';
 import { CacheModule } from '../cache/cache.module';
 import { TWO_FACTOR_ENROLLMENT_TTL_SECONDS } from './two-factor-enrollment.constants';
 
@@ -10,7 +10,7 @@ import { TWO_FACTOR_ENROLLMENT_TTL_SECONDS } from './two-factor-enrollment.const
   controllers: [TwoFactorEnrollmentController],
   providers: [TwoFactorEnrollmentService, TwoFactorEnrollmentRepository],
   imports: [
-    ClientModule.register(Services.USER, Services.NOTIFICATION),
+    EventClientModule.register(Services.USER, Services.NOTIFICATION),
     CacheModule.forFeature({
       prefix: 'auth:2fa-enroll',
       defaultTtlSeconds: TWO_FACTOR_ENROLLMENT_TTL_SECONDS,

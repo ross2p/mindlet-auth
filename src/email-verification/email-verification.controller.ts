@@ -1,14 +1,11 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
   AuthCommonProto,
   AuthCoreProto,
   AuthEmailVerificationProto,
   AuthMessage,
   DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
 } from '@ross2p/common';
 import { toTokenPayload } from '../auth/auth.grpc-mapper';
 import { SessionIdMessageDto } from './dto/session-id-message.dto';
@@ -17,7 +14,6 @@ import { EmailVerificationService } from './email-verification.service';
 import { toEmailVerificationMessage } from './email-verification.grpc-mapper';
 
 @Controller()
-@AuthEmailVerificationProto.EmailVerificationServiceControllerMethods()
 export class EmailVerificationController
   implements AuthEmailVerificationProto.EmailVerificationServiceController
 {
@@ -26,14 +22,14 @@ export class EmailVerificationController
   ) {}
 
   @MessagePattern(AuthMessage.EMAIL_RESEND_CODE)
-  resendEmailVerificationCodeKafka(@DataPayload() data: SessionIdMessageDto) {
+  resendEmailVerificationCodeEvent(@DataPayload() data: SessionIdMessageDto) {
     return this.emailVerificationService.sendCode({
       sessionId: data.sessionId,
     });
   }
 
   @MessagePattern(AuthMessage.EMAIL_VERIFY)
-  verifyEmailKafka(@DataPayload() data: VerifyEmailMessageDto) {
+  verifyEmailEvent(@DataPayload() data: VerifyEmailMessageDto) {
     return this.emailVerificationService.checkCode({
       id: data.id,
       userId: data.userId,
@@ -43,7 +39,7 @@ export class EmailVerificationController
     });
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('EmailVerificationService', 'resendEmailVerificationCode')
   async resendEmailVerificationCode(
     data: AuthCommonProto.SessionIdRequest,
   ): Promise<AuthEmailVerificationProto.EmailVerification> {
@@ -53,7 +49,7 @@ export class EmailVerificationController
     return toEmailVerificationMessage(result);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('EmailVerificationService', 'verifyEmail')
   async verifyEmail(
     data: AuthEmailVerificationProto.VerifyEmailRequest,
   ): Promise<AuthCoreProto.TokenPayload> {

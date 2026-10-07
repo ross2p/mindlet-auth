@@ -1,13 +1,10 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
   AuthCommonProto,
   AuthMessage,
   AuthPasswordResetProto,
   DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
 } from '@ross2p/common';
 import { ChangePasswordMessageDto } from './dto/change-password-message.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -16,29 +13,28 @@ import { SessionIdMessageDto } from './dto/session-id-message.dto';
 import { PasswordResetService } from './password-reset.service';
 
 @Controller()
-@AuthPasswordResetProto.PasswordResetServiceControllerMethods()
 export class PasswordResetController
   implements AuthPasswordResetProto.PasswordResetServiceController
 {
   constructor(private readonly passwordResetService: PasswordResetService) {}
 
   @MessagePattern(AuthMessage.FORGOT_PASSWORD)
-  forgotPasswordKafka(@DataPayload() body: ForgotPasswordDto) {
+  forgotPasswordEvent(@DataPayload() body: ForgotPasswordDto) {
     return this.passwordResetService.forgotPassword(body);
   }
 
   @MessagePattern(AuthMessage.RESET_PASSWORD)
-  resetPasswordKafka(@DataPayload() body: ResetPasswordDto) {
+  resetPasswordEvent(@DataPayload() body: ResetPasswordDto) {
     return this.passwordResetService.resetPassword(body);
   }
 
   @MessagePattern(AuthMessage.CHANGE_PASSWORD_REQUEST_2FA)
-  requestChangePassword2fa(@DataPayload() data: SessionIdMessageDto) {
+  requestChangePassword2faEvent(@DataPayload() data: SessionIdMessageDto) {
     return this.passwordResetService.requestChangePassword2fa(data.sessionId);
   }
 
   @MessagePattern(AuthMessage.CHANGE_PASSWORD)
-  changePasswordKafka(@DataPayload() data: ChangePasswordMessageDto) {
+  changePasswordEvent(@DataPayload() data: ChangePasswordMessageDto) {
     return this.passwordResetService.changePasswordFromDto(
       data.userId,
       data.sessionId,
@@ -46,7 +42,7 @@ export class PasswordResetController
     );
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('PasswordResetService', 'forgotPassword')
   async forgotPassword(
     data: AuthPasswordResetProto.ForgotPasswordRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -54,15 +50,19 @@ export class PasswordResetController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('PasswordResetService', 'resetPassword')
   async resetPassword(
     data: AuthPasswordResetProto.ResetPasswordRequest,
   ): Promise<AuthCommonProto.Empty> {
-    await this.passwordResetService.resetPassword(data);
+    await this.passwordResetService.resetPassword({
+      token: data.token,
+      password: data.password ?? undefined,
+      newPassword: data.newPassword ?? undefined,
+    });
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('PasswordResetService', 'requestChangePasswordTwoFactor')
   async requestChangePasswordTwoFactor(
     data: AuthCommonProto.SessionIdRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -70,7 +70,7 @@ export class PasswordResetController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('PasswordResetService', 'changePassword')
   async changePassword(
     data: AuthPasswordResetProto.ChangePasswordRequest,
   ): Promise<AuthCommonProto.Empty> {

@@ -1,36 +1,28 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
-import {
-  AuthCredentialsProto,
-  AuthMessage,
-  DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
-} from '@ross2p/common';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
+import { AuthCredentialsProto, AuthMessage, DataPayload } from '@ross2p/common';
 import { CredentialsService } from './credentials.service';
 import { toUserTokens } from './credentials.grpc-mapper';
 import { LoginWithContext } from './dto/login-with-context.dto';
 import { RegisterWithContext } from './dto/register-with-context.dto';
 
 @Controller()
-@AuthCredentialsProto.CredentialsServiceControllerMethods()
 export class CredentialsController
   implements AuthCredentialsProto.CredentialsServiceController
 {
   constructor(private readonly credentialsService: CredentialsService) {}
 
   @MessagePattern(AuthMessage.LOGIN)
-  loginCredentials(@DataPayload() command: LoginWithContext) {
+  loginCredentialsEvent(@DataPayload() command: LoginWithContext) {
     return this.credentialsService.emailLogin(command);
   }
 
   @MessagePattern(AuthMessage.REGISTER)
-  registerCredentials(@DataPayload() command: RegisterWithContext) {
+  registerCredentialsEvent(@DataPayload() command: RegisterWithContext) {
     return this.credentialsService.emailRegister(command);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('CredentialsService', 'login')
   async login(
     data: AuthCredentialsProto.LoginRequest,
   ): Promise<AuthCredentialsProto.UserTokens> {
@@ -40,7 +32,7 @@ export class CredentialsController
     return toUserTokens(result);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('CredentialsService', 'register')
   async register(
     data: AuthCredentialsProto.RegisterRequest,
   ): Promise<AuthCredentialsProto.UserTokens> {

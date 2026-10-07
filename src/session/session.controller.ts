@@ -1,13 +1,10 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
   AuthCommonProto,
   AuthMessage,
   AuthSessionProto,
   DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
 } from '@ross2p/common';
 import { ListSessionsMessageDto } from './dto/list-sessions-message.dto';
 import { PageRequestSessionDto } from './dto/page-request-session.dto';
@@ -17,14 +14,13 @@ import { SessionService } from './session.service';
 import { toSessionPage } from './session.grpc-mapper';
 
 @Controller()
-@AuthSessionProto.SessionServiceControllerMethods()
 export class SessionController
   implements AuthSessionProto.SessionServiceController
 {
   constructor(private readonly sessionService: SessionService) {}
 
   @MessagePattern(AuthMessage.SESSION_LIST)
-  listSessionsKafka(@DataPayload() data: ListSessionsMessageDto) {
+  listSessionsEvent(@DataPayload() data: ListSessionsMessageDto) {
     const dto = Object.assign(new PageRequestSessionDto(), {
       userId: data.userId,
       pageNumber: data.pageNumber ?? 1,
@@ -34,21 +30,21 @@ export class SessionController
   }
 
   @MessagePattern(AuthMessage.SESSION_SIGN_OUT)
-  signOutSessionKafka(@DataPayload() data: SessionIdentityDto) {
+  signOutSessionEvent(@DataPayload() data: SessionIdentityDto) {
     return this.sessionService.signOut(data.userId, data.sessionId, 'sign-out');
   }
 
   @MessagePattern(AuthMessage.SESSION_SIGN_OUT_ALL)
-  signOutAllSessionsKafka(@DataPayload() data: UserIdMessageDto) {
+  signOutAllSessionsEvent(@DataPayload() data: UserIdMessageDto) {
     return this.sessionService.signOutAll(data.userId);
   }
 
   @MessagePattern(AuthMessage.SESSION_REVOKE)
-  revokeSessionKafka(@DataPayload() data: SessionIdentityDto) {
+  revokeSessionEvent(@DataPayload() data: SessionIdentityDto) {
     return this.sessionService.signOut(data.userId, data.sessionId, 'revoked');
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('SessionService', 'listSessions')
   async listSessions(
     data: AuthSessionProto.ListSessionsRequest,
   ): Promise<AuthSessionProto.SessionPage> {
@@ -61,7 +57,7 @@ export class SessionController
     return toSessionPage(page);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('SessionService', 'signOutSession')
   async signOutSession(
     data: AuthCommonProto.SessionIdentityRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -69,7 +65,7 @@ export class SessionController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('SessionService', 'signOutAllSessions')
   async signOutAllSessions(
     data: AuthCommonProto.UserIdRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -77,7 +73,7 @@ export class SessionController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('SessionService', 'revokeSession')
   async revokeSession(
     data: AuthCommonProto.SessionIdentityRequest,
   ): Promise<AuthCommonProto.Empty> {

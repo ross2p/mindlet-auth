@@ -1,14 +1,11 @@
-import { Controller, UseFilters } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
   AuthCommonProto,
   AuthCoreProto,
   AuthMessage,
   AuthTwoFactorProto,
   DataPayload,
-  GrpcErrorFilter,
-  GrpcGlobalFilter,
-  GrpcHttpExceptionFilter,
 } from '@ross2p/common';
 import { SessionIdMessageDto } from './dto/session-id-message.dto';
 import { TwoFactorSessionMessageDto } from './dto/two-factor-session-message.dto';
@@ -18,24 +15,23 @@ import { toTwoFactorChallenge } from './two-factor.grpc-mapper';
 import { toTokenPayload } from '../auth/auth.grpc-mapper';
 
 @Controller()
-@AuthTwoFactorProto.TwoFactorServiceControllerMethods()
 export class TwoFactorController
   implements AuthTwoFactorProto.TwoFactorServiceController
 {
   constructor(private readonly twoFactorService: TwoFactorService) {}
 
   @MessagePattern(AuthMessage.TWO_FACTOR_METHODS)
-  listTwoFactorMethods(@DataPayload() data: TwoFactorSessionMessageDto) {
+  listTwoFactorMethodsEvent(@DataPayload() data: TwoFactorSessionMessageDto) {
     return this.twoFactorService.listTwoFactorMethods(data);
   }
 
   @MessagePattern(AuthMessage.TWO_FACTOR_RESEND)
-  resendTwoFactorCodeKafka(@DataPayload() data: SessionIdMessageDto) {
+  resendTwoFactorCodeEvent(@DataPayload() data: SessionIdMessageDto) {
     return this.twoFactorService.sendCode({ sessionId: data.sessionId });
   }
 
   @MessagePattern(AuthMessage.TWO_FACTOR_VERIFY)
-  verifyTwoFactor(@DataPayload() data: VerifyTwoFactorMessageDto) {
+  verifyTwoFactorEvent(@DataPayload() data: VerifyTwoFactorMessageDto) {
     return this.twoFactorService.checkCode({
       userId: data.userId,
       sessionId: data.sessionId,
@@ -44,15 +40,15 @@ export class TwoFactorController
     });
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
-  async getTwoFactorChallenge(
+  @GrpcMethod('TwoFactorService', 'findTwoFactorChallenge')
+  async findTwoFactorChallenge(
     data: AuthTwoFactorProto.TwoFactorSessionRequest,
   ): Promise<AuthTwoFactorProto.TwoFactorChallenge> {
     const result = await this.twoFactorService.listTwoFactorMethods(data);
     return toTwoFactorChallenge(result);
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('TwoFactorService', 'resendTwoFactorCode')
   async resendTwoFactorCode(
     data: AuthCommonProto.SessionIdRequest,
   ): Promise<AuthCommonProto.Empty> {
@@ -60,7 +56,7 @@ export class TwoFactorController
     return {};
   }
 
-  @UseFilters(GrpcHttpExceptionFilter, GrpcErrorFilter, GrpcGlobalFilter)
+  @GrpcMethod('TwoFactorService', 'verifyTwoFactorCode')
   async verifyTwoFactorCode(
     data: AuthTwoFactorProto.VerifyTwoFactorCodeRequest,
   ): Promise<AuthCoreProto.TokenPayload> {
