@@ -1,12 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import {
-  AuthenticatedUser,
-  EventClientService,
-  Services,
-  UserQuery,
-} from '@ross2p/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuthenticatedUser } from '@ross2p/common';
 import { SessionService } from '../session/session.service';
 import { UserTokenService } from '../token/user-token/user-token.service';
+import { UserClient } from '../user-grpc/user-client.service';
+import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
 import type { AuthUserView } from './dto/auth-user.view';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { TokenPayloadDto } from './dto/token-payload.dto';
@@ -17,10 +14,18 @@ import { assertRefreshAllowed } from './refresh-gate.util';
 export class AuthService {
   constructor(
     private readonly userTokenService: UserTokenService,
-    @Inject(Services.USER)
-    private readonly userService: EventClientService,
+    private readonly userClient: UserClient,
     private readonly sessionService: SessionService,
   ) {}
+
+  /** Mirrors the pre-gRPC behavior: any lookup failure reads as unauthorized. */
+  private async findUserOrUnauthorized(userId: string): Promise<AuthUserView> {
+    try {
+      return toAuthUserView(await this.userClient.findUserById(userId));
+    } catch {
+      throw new UnauthorizedException('User not found');
+    }
+  }
 
   async validateUserByToken(token: string): Promise<AuthenticatedUser> {
     const userPayload = this.userTokenService.validateAccessToken(token);
@@ -61,14 +66,7 @@ export class AuthService {
       dto.refreshToken,
     );
 
-    const user = await this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId: session.userId });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    const user = await this.findUserOrUnauthorized(session.userId);
 
     assertRefreshAllowed({
       emailVerifiedAt: user.emailVerifiedAt,
@@ -101,14 +99,7 @@ export class AuthService {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       params.sessionId,
     );
-    const user = await this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId: session.userId });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    const user = await this.findUserOrUnauthorized(session.userId);
 
     const pendingVerification = user.emailVerifiedAt == null;
 

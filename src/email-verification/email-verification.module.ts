@@ -5,12 +5,14 @@ import { EmailVerificationRepository } from './email-verification.repository';
 import { EventClientModule, Services } from '@ross2p/common';
 import { CacheModule } from '../cache/cache.module';
 import { EMAIL_VERIFICATION_CODE_TTL_SECONDS } from './email-verification.constants';
+import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
 
 @Module({
   controllers: [EmailVerificationController],
   providers: [EmailVerificationService, EmailVerificationRepository],
   imports: [
-    EventClientModule.register(Services.USER, Services.NOTIFICATION),
+    UserGrpcClientModule,
+    EventClientModule.register(Services.NOTIFICATION),
     CacheModule.forFeature({
       prefix: 'auth:email-verify',
       defaultTtlSeconds: EMAIL_VERIFICATION_CODE_TTL_SECONDS,

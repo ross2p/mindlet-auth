@@ -1,13 +1,13 @@
 import { Global, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { Services, EventClientModule } from '@ross2p/common';
+import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
 
 @Global()
 @Module({
   controllers: [AuthController],
   providers: [AuthService],
-  imports: [EventClientModule.register(Services.USER)],
+  imports: [UserGrpcClientModule],
   exports: [AuthService],
 })
 export class AuthModule {}

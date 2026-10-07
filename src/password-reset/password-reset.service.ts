@@ -8,11 +8,10 @@ import {
   EventClientService,
   NotificationMessage,
   Services,
-  UserMessage,
-  UserPrivateMessage,
-  UserQuery,
 } from '@ross2p/common';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { UserClient } from '../user-grpc/user-client.service';
+import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -25,7 +24,7 @@ import { AuthErrorCode, throwAuthBadRequest } from '../auth-exception';
 export class PasswordResetService implements OnModuleInit {
   constructor(
     private readonly passwordResetTokenService: PasswordResetTokenService,
-    @Inject(Services.USER) private readonly userService: EventClientService,
+    private readonly userClient: UserClient,
     @Inject(Services.NOTIFICATION)
     private readonly notificationClient: EventClientService,
     private readonly sessionService: SessionService,
@@ -33,14 +32,9 @@ export class PasswordResetService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    this.userService.subscribeToResponseOf(UserQuery.GET_BY_EMAIL);
-    this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
-    this.userService.subscribeToResponseOf(UserPrivateMessage.UPDATE);
-    this.userService.subscribeToResponseOf(UserMessage.VERIFY_PASSWORD);
     this.notificationClient.subscribeToResponseOf(
       NotificationMessage.SEND_PASSWORD_RESET,
     );
-    await this.userService.connect();
     await this.notificationClient.connect();
   }
 
@@ -48,10 +42,7 @@ export class PasswordResetService implements OnModuleInit {
     email: string,
   ): Promise<AuthUserView | null> {
     try {
-      return await this.userService.sendAndReturnPromise<
-        AuthUserView,
-        { email: string }
-      >(UserQuery.GET_BY_EMAIL, { email });
+      return toAuthUserView(await this.userClient.findUserByEmail(email));
     } catch (err) {
       if (
         err instanceof ForbiddenException ||
@@ -100,12 +91,9 @@ export class PasswordResetService implements OnModuleInit {
       );
     }
 
-    const user = await this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { email: string }
-    >(UserQuery.GET_BY_EMAIL, { email });
+    const user = toAuthUserView(await this.userClient.findUserByEmail(email));
 
-    await this.userService.sendAndReturnPromise(UserPrivateMessage.UPDATE, {
+    await this.userClient.updateUserPrivateData({
       userId: user.id,
       password: newPassword,
     });
@@ -124,10 +112,9 @@ export class PasswordResetService implements OnModuleInit {
     newPassword: string;
     twoFactorCode?: string | null;
   }): Promise<void> {
-    const user = await this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId: args.userId });
+    const user = toAuthUserView(
+      await this.userClient.findUserById(args.userId),
+    );
 
     if (user.twoFactorEnabled) {
       if (!args.twoFactorCode?.trim()) {
@@ -150,11 +137,9 @@ export class PasswordResetService implements OnModuleInit {
       }
     }
 
-    const passwordOk = await this.userService
-      .sendAndReturnPromise<boolean>(UserMessage.VERIFY_PASSWORD, {
-        userId: args.userId,
-        password: args.currentPassword,
-      })
+    const passwordOk = await this.userClient
+      .verifyPassword({ userId: args.userId, password: args.currentPassword })
+      .then((result) => result.valid ?? false)
       .catch((): boolean => false);
 
     if (!passwordOk) {
@@ -164,7 +149,7 @@ export class PasswordResetService implements OnModuleInit {
       );
     }
 
-    await this.userService.sendAndReturnPromise(UserPrivateMessage.UPDATE, {
+    await this.userClient.updateUserPrivateData({
       userId: args.userId,
       password: args.newPassword,
     });

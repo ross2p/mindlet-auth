@@ -10,29 +10,25 @@ import {
   EventClientService,
   NotificationMessage,
   Services,
-  UserMessage,
-  UserQuery,
 } from '@ross2p/common';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { UserClient } from '../user-grpc/user-client.service';
+import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
 import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repository';
 
 @Injectable()
 export class TwoFactorEnrollmentService implements OnModuleInit {
   constructor(
     private readonly enrollmentRepository: TwoFactorEnrollmentRepository,
-    @Inject(Services.USER) private readonly userService: EventClientService,
+    private readonly userClient: UserClient,
     @Inject(Services.NOTIFICATION)
     private readonly notificationClient: EventClientService,
   ) {}
 
   async onModuleInit() {
-    this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
-    this.userService.subscribeToResponseOf(UserMessage.VERIFY_PASSWORD);
-    this.userService.subscribeToResponseOf(UserMessage.SET_TWO_FACTOR_ENABLED);
     this.notificationClient.subscribeToResponseOf(
       NotificationMessage.SEND_TWO_FACTOR,
     );
-    await this.userService.connect();
     await this.notificationClient.connect();
   }
 
@@ -41,10 +37,7 @@ export class TwoFactorEnrollmentService implements OnModuleInit {
   }
 
   private async loadUser(userId: string): Promise<AuthUserView> {
-    return this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId });
+    return toAuthUserView(await this.userClient.findUserById(userId));
   }
 
   async beginEnable(userId: string): Promise<void> {
@@ -96,13 +89,7 @@ export class TwoFactorEnrollmentService implements OnModuleInit {
     }
 
     await this.enrollmentRepository.deleteByUserId(userId);
-    await this.userService.sendAndReturnPromise(
-      UserMessage.SET_TWO_FACTOR_ENABLED,
-      {
-        userId,
-        enabled: true,
-      },
-    );
+    await this.userClient.setTwoFactorEnabled({ userId, enabled: true });
   }
 
   async disable(userId: string, password: string): Promise<void> {
@@ -113,24 +100,16 @@ export class TwoFactorEnrollmentService implements OnModuleInit {
       );
     }
 
-    const ok = await this.userService
-      .sendAndReturnPromise<boolean>(UserMessage.VERIFY_PASSWORD, {
-        userId,
-        password,
-      })
+    const ok = await this.userClient
+      .verifyPassword({ userId, password })
+      .then((result) => result.valid ?? false)
       .catch((): boolean => false);
 
     if (!ok) {
       throw new BadRequestException('Invalid password');
     }
 
-    await this.userService.sendAndReturnPromise(
-      UserMessage.SET_TWO_FACTOR_ENABLED,
-      {
-        userId,
-        enabled: false,
-      },
-    );
+    await this.userClient.setTwoFactorEnabled({ userId, enabled: false });
     await this.enrollmentRepository.deleteByUserId(userId);
   }
 }

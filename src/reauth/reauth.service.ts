@@ -1,6 +1,6 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { EventClientService, Services, UserMessage } from '@ross2p/common';
+import { Injectable } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
+import { UserClient } from '../user-grpc/user-client.service';
 import { REAUTH_TTL_SECONDS } from './reauth.constants';
 
 /**
@@ -9,26 +9,19 @@ import { REAUTH_TTL_SECONDS } from './reauth.constants';
  * exists (T20/T21) but shares this same marker via `markVerified`.
  */
 @Injectable()
-export class ReauthService implements OnModuleInit {
+export class ReauthService {
   constructor(
     private readonly cache: CacheService,
-    @Inject(Services.USER) private readonly userService: EventClientService,
+    private readonly userClient: UserClient,
   ) {}
-
-  async onModuleInit() {
-    this.userService.subscribeToResponseOf(UserMessage.VERIFY_PASSWORD);
-    await this.userService.connect();
-  }
 
   public async verifyPassword(
     userId: string,
     password: string,
   ): Promise<boolean> {
-    const isValid = await this.userService
-      .sendAndReturnPromise<boolean>(UserMessage.VERIFY_PASSWORD, {
-        userId,
-        password,
-      })
+    const isValid = await this.userClient
+      .verifyPassword({ userId, password })
+      .then((result) => result.valid ?? false)
       .catch((): boolean => false);
 
     if (isValid) {

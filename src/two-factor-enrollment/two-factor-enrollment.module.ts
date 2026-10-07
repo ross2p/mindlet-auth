@@ -5,12 +5,14 @@ import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repositor
 import { EventClientModule, Services } from '@ross2p/common';
 import { CacheModule } from '../cache/cache.module';
 import { TWO_FACTOR_ENROLLMENT_TTL_SECONDS } from './two-factor-enrollment.constants';
+import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
 
 @Module({
   controllers: [TwoFactorEnrollmentController],
   providers: [TwoFactorEnrollmentService, TwoFactorEnrollmentRepository],
   imports: [
-    EventClientModule.register(Services.USER, Services.NOTIFICATION),
+    UserGrpcClientModule,
+    EventClientModule.register(Services.NOTIFICATION),
     CacheModule.forFeature({
       prefix: 'auth:2fa-enroll',
       defaultTtlSeconds: TWO_FACTOR_ENROLLMENT_TTL_SECONDS,

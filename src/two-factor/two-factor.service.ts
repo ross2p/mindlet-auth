@@ -4,7 +4,6 @@ import {
   EventClientService,
   NotificationMessage,
   Services,
-  UserQuery,
 } from '@ross2p/common';
 import type { VerifyTwoFactorCodeType } from '@ross2p/types';
 import { TwoFactorRepository } from './two-factor.repository';
@@ -12,6 +11,8 @@ import { AuthService } from '../auth/auth.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
 import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { UserClient } from '../user-grpc/user-client.service';
+import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
 import { isTwoFactorAttemptsExceeded } from '../auth-challenge.constants';
 import {
   AuthErrorCode,
@@ -27,18 +28,16 @@ export class TwoFactorService implements OnModuleInit {
     private readonly twoFactorRepository: TwoFactorRepository,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
-    @Inject(Services.USER) private readonly userService: EventClientService,
+    private readonly userClient: UserClient,
     @Inject(Services.NOTIFICATION)
     private readonly notificationClient: EventClientService,
     private readonly sessionService: SessionService,
   ) {}
 
   async onModuleInit() {
-    this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
     this.notificationClient.subscribeToResponseOf(
       NotificationMessage.SEND_TWO_FACTOR,
     );
-    await this.userService.connect();
     await this.notificationClient.connect();
   }
 
@@ -47,10 +46,7 @@ export class TwoFactorService implements OnModuleInit {
   }
 
   private async loadUser(userId: string): Promise<AuthUserView> {
-    return this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId });
+    return toAuthUserView(await this.userClient.findUserById(userId));
   }
 
   private async createTwoFactorCode(

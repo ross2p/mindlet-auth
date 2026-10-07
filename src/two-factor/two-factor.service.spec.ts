@@ -14,10 +14,8 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
   const authService = {
     refreshAccessTokenBySessionId: jest.fn(),
   };
-  const userService = {
-    subscribeToResponseOf: jest.fn(),
-    connect: jest.fn(),
-    sendAndReturnPromise: jest.fn(),
+  const userClient = {
+    findUserById: jest.fn(),
   };
   const notificationClient = {
     subscribeToResponseOf: jest.fn(),
@@ -37,7 +35,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
     service = new TwoFactorService(
       twoFactorRepository as never,
       authService as never,
-      userService as never,
+      userClient as never,
       notificationClient as never,
       sessionService as never,
     );
@@ -49,7 +47,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
       userId: 'u1',
       twoFactorVerifiedAt: null,
     });
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       twoFactorEnabled: true,
     });
@@ -129,7 +127,7 @@ describe('TwoFactorService (AC-10/AC-11)', () => {
   });
 
   it('rejects an unavailable 2FA method (AC-10)', async () => {
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       twoFactorEnabled: true,
     });

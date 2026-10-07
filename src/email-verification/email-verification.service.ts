@@ -11,19 +11,18 @@ import {
   EventClientService,
   NotificationMessage,
   Services,
-  UserMessage,
-  UserQuery,
 } from '@ross2p/common';
 import { EmailVerificationRepository } from './email-verification.repository';
 import { AuthService } from '../auth/auth.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { SessionService } from '../session/session.service';
-import type { AuthUserView } from '../auth/dto/auth-user.view';
+import { UserClient } from '../user-grpc/user-client.service';
+import { toAuthUserView } from '../user-grpc/user-grpc-response.mapper';
 
 @Injectable()
 export class EmailVerificationService implements OnModuleInit {
   constructor(
-    @Inject(Services.USER) private readonly userService: EventClientService,
+    private readonly userClient: UserClient,
     @Inject(Services.NOTIFICATION)
     private readonly notificationClient: EventClientService,
     private readonly emailVerificationRepository: EmailVerificationRepository,
@@ -32,12 +31,9 @@ export class EmailVerificationService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    this.userService.subscribeToResponseOf(UserMessage.EMAIL_MARK_VERIFIED);
-    this.userService.subscribeToResponseOf(UserQuery.GET_BY_ID);
     this.notificationClient.subscribeToResponseOf(
       NotificationMessage.SEND_MAIL_CONFIRMATION,
     );
-    await this.userService.connect();
     await this.notificationClient.connect();
   }
 
@@ -49,10 +45,9 @@ export class EmailVerificationService implements OnModuleInit {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       args.sessionId,
     );
-    const user = await this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId: session.userId });
+    const user = toAuthUserView(
+      await this.userClient.findUserById(session.userId),
+    );
 
     if (user.emailVerifiedAt != null) {
       throw new ConflictException('Email is already verified');
@@ -80,10 +75,9 @@ export class EmailVerificationService implements OnModuleInit {
     email: string;
     code: string;
   }): Promise<TokenPayloadDto> {
-    const user = await this.userService.sendAndReturnPromise<
-      AuthUserView,
-      { userId: string }
-    >(UserQuery.GET_BY_ID, { userId: args.userId });
+    const user = toAuthUserView(
+      await this.userClient.findUserById(args.userId),
+    );
 
     if (user.emailVerifiedAt != null) {
       throw new ConflictException('Email is already verified');
@@ -102,10 +96,10 @@ export class EmailVerificationService implements OnModuleInit {
     await this.emailVerificationRepository.deleteEmailVerificationCode(
       args.userId,
     );
-    await this.userService.sendAndReturnPromise(
-      UserMessage.EMAIL_MARK_VERIFIED,
-      { userId: args.userId, email: args.email },
-    );
+    await this.userClient.markEmailVerified({
+      userId: args.userId,
+      email: args.email,
+    });
 
     return this.authService.refreshAccessTokenBySessionId(args.sessionId);
   }

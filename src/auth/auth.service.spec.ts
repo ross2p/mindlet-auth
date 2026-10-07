@@ -8,8 +8,8 @@ describe('AuthService generateTokens (AC-18)', () => {
       refreshToken: { token: 'refresh-plain' },
     }),
   };
-  const userService = {
-    sendAndReturnPromise: jest.fn().mockResolvedValue({
+  const userClient = {
+    findUserById: jest.fn().mockResolvedValue({
       id: 'u1',
       email: 'user-a1b2@example.test',
       emailVerifiedAt: new Date(),
@@ -33,7 +33,7 @@ describe('AuthService generateTokens (AC-18)', () => {
       accessToken: { token: 'access' },
       refreshToken: { token: 'refresh-plain' },
     });
-    userService.sendAndReturnPromise.mockResolvedValue({
+    userClient.findUserById.mockResolvedValue({
       id: 'u1',
       email: 'user-a1b2@example.test',
       emailVerifiedAt: new Date(),
@@ -49,7 +49,7 @@ describe('AuthService generateTokens (AC-18)', () => {
   it('persists sha256(refreshToken) on the Session after mint (AC-18)', async () => {
     const service = new AuthService(
       userTokenService as never,
-      userService as never,
+      userClient as never,
       sessionService as never,
     );
 
@@ -65,7 +65,7 @@ describe('AuthService generateTokens (AC-18)', () => {
   it('skips hash persist when minting access-only after verify', async () => {
     const service = new AuthService(
       userTokenService as never,
-      userService as never,
+      userClient as never,
       sessionService as never,
     );
 

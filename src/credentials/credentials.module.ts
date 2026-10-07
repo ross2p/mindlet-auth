@@ -1,17 +1,13 @@
 import { Module } from '@nestjs/common';
-import { EventClientModule, Services } from '@ross2p/common';
 import { CredentialsController } from './credentials.controller';
 import { CredentialsService } from './credentials.service';
 import { TwoFactorModule } from '../two-factor/two-factor.module';
 import { EmailVerificationModule } from '../email-verification/email-verification.module';
+import { UserGrpcClientModule } from '../user-grpc/user-grpc-client.module';
 
 @Module({
   controllers: [CredentialsController],
-  imports: [
-    EventClientModule.register(Services.USER),
-    TwoFactorModule,
-    EmailVerificationModule,
-  ],
+  imports: [UserGrpcClientModule, TwoFactorModule, EmailVerificationModule],
   providers: [CredentialsService],
   exports: [CredentialsService],
 })
