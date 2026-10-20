@@ -1,4 +1,4 @@
-import type { AuthCoreProto } from '@ross2p/common';
+import type { AuthCoreProto } from '../../generated/protos';
 
 export interface Payload {
   type: AuthCoreProto.TokenType;

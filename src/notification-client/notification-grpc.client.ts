@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { NotificationCoreProto } from '@ross2p/common';
+import { NotificationCoreProto } from '../../generated/protos';
 import { firstValueFrom } from 'rxjs';
 import { NOTIFICATION_GRPC_TRANSPORT } from './notification-grpc.token';
 

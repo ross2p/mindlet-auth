@@ -4,7 +4,7 @@ import {
   AuthCommonProto,
   AuthCoreProto,
   AuthTwoFactorProto,
-} from '@ross2p/common';
+} from '../../generated/protos';
 import { TwoFactorService } from './two-factor.service';
 
 @Controller()

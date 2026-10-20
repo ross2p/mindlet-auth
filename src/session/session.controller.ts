@@ -1,11 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, GrpcMethod } from '@nestjs/microservices';
-import {
-  AuthCommonProto,
-  AuthSessionProto,
-  DataPayload,
-  UserEvent,
-} from '@ross2p/common';
+import { DataPayload, UserEvent } from '@ross2p/common';
+import { AuthCommonProto, AuthSessionProto } from '../../generated/protos';
 import { AccountDeletionEventDto } from './types/account-deletion-event.dto';
 import { PageRequestSessionDto } from './types/page-request-session.dto';
 import { SessionService } from './session.service';

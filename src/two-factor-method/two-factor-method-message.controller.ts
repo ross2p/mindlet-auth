@@ -5,11 +5,11 @@ import {
 } from '@ross2p/types';
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { ValidationPipe } from '@ross2p/common';
 import {
   AuthCommonProto,
   AuthTwoFactorMethodProto,
-  ValidationPipe,
-} from '@ross2p/common';
+} from '../../generated/protos';
 import { TwoFactorMethodService } from './two-factor-method.service';
 import {
   toEnableTwoFactorMethodResult,

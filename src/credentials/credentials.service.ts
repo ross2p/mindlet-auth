@@ -14,7 +14,7 @@ import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
 import { computePlatformAccessOpen } from '../platform-access.util';
 import { buildTwoFactorChallenge } from '../two-factor/two-factor-methods.util';
 import { sessionExpiresAt } from '../auth-challenge.constants';
-import { AuthErrorCode, throwAuthUnauthorized } from '../auth-exception';
+import { SignInUnavailable } from '../auth.exceptions';
 
 @Injectable()
 export class CredentialsService {
@@ -35,10 +35,7 @@ export class CredentialsService {
         (err as { status?: number })?.status === 403 ||
         String((err as Error)?.message ?? '').includes('unavailable')
       ) {
-        throwAuthUnauthorized(
-          AuthErrorCode.signInUnavailable,
-          'Sign-in is unavailable for these credentials',
-        );
+        throw new SignInUnavailable();
       }
       return null;
     }
@@ -48,10 +45,7 @@ export class CredentialsService {
     const user = await this.loadUserByEmail(command.email);
 
     if (!user) {
-      throwAuthUnauthorized(
-        AuthErrorCode.signInUnavailable,
-        'Sign-in is unavailable for these credentials',
-      );
+      throw new SignInUnavailable();
     }
 
     const isPasswordValid: boolean = await this.userClient
@@ -60,10 +54,7 @@ export class CredentialsService {
       .catch((): boolean => false);
 
     if (!isPasswordValid) {
-      throwAuthUnauthorized(
-        AuthErrorCode.signInUnavailable,
-        'Sign-in is unavailable for these credentials',
-      );
+      throw new SignInUnavailable();
     }
 
     const now = new Date();

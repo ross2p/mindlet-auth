@@ -1,7 +1,7 @@
 import { NotificationGrpcClient } from '../notification-client/notification-grpc.client';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { randomInt } from 'crypto';
-import { NotificationCoreProto } from '@ross2p/common';
+import { NotificationCoreProto } from '../../generated/protos';
 import type { VerifyTwoFactorCodeType } from '@ross2p/types';
 import type { TokenPayloadDto } from '../token/types/token.types';
 import { TwoFactorRepository } from './two-factor.repository';
@@ -12,11 +12,14 @@ import { UserClient } from '../user-client/user-client.service';
 import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
 import { isTwoFactorAttemptsExceeded } from '../auth-challenge.constants';
 import {
-  AuthErrorCode,
-  throwAuthBadRequest,
-  throwAuthConflict,
-  throwAuthTooManyRequests,
-} from '../auth-exception';
+  TwoFactorAlreadyVerified,
+  TwoFactorAttemptsExceeded,
+  TwoFactorChallengeNotPending,
+  TwoFactorCodeExpired,
+  TwoFactorCodeIncorrect,
+  TwoFactorMethodUnavailable,
+  TwoFactorNotEnabled,
+} from '../auth.exceptions';
 import { buildTwoFactorChallenge } from './two-factor-methods.util';
 
 @Injectable()
@@ -60,18 +63,12 @@ export class TwoFactorService {
     );
 
     if (session.twoFactorVerifiedAt != null) {
-      throwAuthBadRequest(
-        AuthErrorCode.twoFactorNotRequired,
-        'Two-factor authentication is already verified for this session.',
-      );
+      throw new TwoFactorAlreadyVerified();
     }
 
     const user = await this.loadUser(session.userId);
     if (!user.twoFactorEnabled) {
-      throwAuthBadRequest(
-        AuthErrorCode.twoFactorNotRequired,
-        'Two-factor authentication is not enabled',
-      );
+      throw new TwoFactorNotEnabled();
     }
     await this.createTwoFactorCode(args.sessionId, user);
   }
@@ -83,10 +80,7 @@ export class TwoFactorService {
     );
     const user = await this.loadUser(session.userId);
     if (!user.twoFactorEnabled) {
-      throwAuthBadRequest(
-        AuthErrorCode.twoFactorNotRequired,
-        'Two-factor authentication is not enabled',
-      );
+      throw new TwoFactorNotEnabled();
     }
     await this.createTwoFactorCode(args.sessionId, user);
   }
@@ -108,10 +102,7 @@ export class TwoFactorService {
       });
       const selected = challenge?.methods.find((m) => m.id === args.method);
       if (!selected?.available) {
-        throwAuthBadRequest(
-          AuthErrorCode.twoFactorCodeInvalid,
-          'This two-factor method is not available.',
-        );
+        throw new TwoFactorMethodUnavailable();
       }
     }
 
@@ -119,10 +110,7 @@ export class TwoFactorService {
       args.userId,
     );
     if (isTwoFactorAttemptsExceeded(failed)) {
-      throwAuthTooManyRequests(
-        AuthErrorCode.twoFactorAttemptsExceeded,
-        'Too many incorrect two-factor codes. Try again later.',
-      );
+      throw new TwoFactorAttemptsExceeded();
     }
 
     const twoFactorCode =
@@ -130,10 +118,7 @@ export class TwoFactorService {
         args.sessionId,
       );
     if (!twoFactorCode) {
-      throwAuthBadRequest(
-        AuthErrorCode.twoFactorCodeInvalid,
-        'This two-factor code is invalid or has expired. Request a new code.',
-      );
+      throw new TwoFactorCodeExpired();
     }
 
     if (twoFactorCode.code !== args.code.trim()) {
@@ -141,15 +126,9 @@ export class TwoFactorService {
         args.userId,
       );
       if (isTwoFactorAttemptsExceeded(next)) {
-        throwAuthTooManyRequests(
-          AuthErrorCode.twoFactorAttemptsExceeded,
-          'Too many incorrect two-factor codes. Try again later.',
-        );
+        throw new TwoFactorAttemptsExceeded();
       }
-      throwAuthBadRequest(
-        AuthErrorCode.twoFactorCodeInvalid,
-        'The two-factor code is incorrect.',
-      );
+      throw new TwoFactorCodeIncorrect();
     }
 
     await this.twoFactorRepository.deleteTwoFactorCode(args.sessionId);
@@ -185,10 +164,7 @@ export class TwoFactorService {
       twoFactorEnabled: fullUser.twoFactorEnabled,
     });
     if (!challenge || session.twoFactorVerifiedAt != null) {
-      throwAuthConflict(
-        AuthErrorCode.twoFactorNotRequired,
-        'Two-factor challenge is not pending',
-      );
+      throw new TwoFactorChallengeNotPending();
     }
     return { methods: challenge.methods };
   }

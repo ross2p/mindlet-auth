@@ -1,4 +1,7 @@
-import type { AuthCoreProto, AuthTwoFactorProto } from '@ross2p/common';
+import type {
+  AuthCoreProto,
+  AuthTwoFactorProto,
+} from '../../../generated/protos';
 import type {
   RefreshPayload,
   RefreshTokenPayloadType,

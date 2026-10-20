@@ -4,7 +4,7 @@ import {
   AuthCommonProto,
   AuthCoreProto,
   AuthEmailVerificationProto,
-} from '@ross2p/common';
+} from '../../generated/protos';
 import { EmailVerificationService } from './email-verification.service';
 
 @Controller()

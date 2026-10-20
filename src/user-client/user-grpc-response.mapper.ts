@@ -1,4 +1,4 @@
-import { UserCoreProto } from '@ross2p/common';
+import { UserCoreProto } from '../../generated/protos';
 import type { AuthUserView } from '../auth/types/auth-user.view';
 
 /**

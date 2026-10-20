@@ -7,7 +7,7 @@ import {
   JsonWebTokenError,
 } from 'jsonwebtoken';
 import type { Payload } from './payload.interface';
-import { AuthCoreProto } from '@ross2p/common';
+import { AuthCoreProto } from '../../generated/protos';
 
 export abstract class BaseTokenService<T extends Payload> {
   protected abstract readonly tokenType: AuthCoreProto.TokenType;

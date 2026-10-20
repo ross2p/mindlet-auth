@@ -3,7 +3,7 @@ import {
   UserCoreProto,
   UserPasswordProto,
   UserPrivateDataProto,
-} from '@ross2p/common';
+} from '../../generated/protos';
 import { UserCoreGrpcClient } from './user-core-grpc.client';
 import { UserPasswordGrpcClient } from './user-password-grpc.client';
 import { UserPrivateDataGrpcClient } from './user-private-data-grpc.client';

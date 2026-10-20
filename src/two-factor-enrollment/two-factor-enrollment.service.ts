@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
-import { NotificationCoreProto } from '@ross2p/common';
+import { NotificationCoreProto } from '../../generated/protos';
 import type { AuthUserView } from '../auth/types/auth-user.view';
 import { UserClient } from '../user-client/user-client.service';
 import { toAuthUserView } from '../user-client/user-grpc-response.mapper';

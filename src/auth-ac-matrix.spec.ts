@@ -1,4 +1,4 @@
-import { AuthTwoFactorProto } from '@ross2p/common';
+import { AuthTwoFactorProto } from '../generated/protos';
 /**
  * AC matrix — mocked integration suite (runs without Docker).
  * Covers the happy-path chain from test-plan.md when ephemeral Postgres/Redis

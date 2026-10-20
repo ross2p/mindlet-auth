@@ -1,12 +1,12 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod, MessagePattern } from '@nestjs/microservices';
 import {
-  AuthCoreProto,
   AuthMessage,
   AuthenticatedUser,
   DataPayload,
   ValidationPipe,
 } from '@ross2p/common';
+import { AuthCoreProto } from '../../generated/protos';
 import { refreshTokenSchema } from '@ross2p/types';
 import { AuthService } from './auth.service';
 import { AccessTokenDto } from './types/access-token.dto';
