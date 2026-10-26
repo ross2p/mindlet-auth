@@ -1,6 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { AuthCommonProto, AuthPasswordResetProto } from '@ross2p/common';
+import {
+  AuthCommonProto,
+  AuthPasswordResetProto,
+} from '../../generated/protos';
 import { PasswordResetService } from './password-reset.service';
 
 @Controller()

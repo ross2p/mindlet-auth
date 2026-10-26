@@ -1,7 +1,7 @@
 import type { UserPayloadDto } from '../types/token.types';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthCoreProto } from '@ross2p/common';
+import { AuthCoreProto } from '../../../generated/protos';
 import { BaseTokenService } from '../base-token.service';
 
 @Injectable()

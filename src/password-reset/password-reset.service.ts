@@ -8,7 +8,7 @@ import { ResetPasswordDto } from './types/reset-password.dto';
 import { PasswordResetTokenService } from '../token/password-reset-token/password-reset-token.service';
 import { SessionService } from '../session/session.service';
 import { TwoFactorService } from '../two-factor/two-factor.service';
-import { AuthErrorCode, throwAuthBadRequest } from '../auth-exception';
+import { PasswordChangeRejected, ResetCodeInvalid } from '../auth.exceptions';
 
 @Injectable()
 export class PasswordResetService {
@@ -54,20 +54,14 @@ export class PasswordResetService {
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
     const newPassword = dto.newPassword ?? dto.password;
     if (!newPassword) {
-      throwAuthBadRequest(
-        AuthErrorCode.resetCodeInvalid,
-        'Reset code expired or already used — request a new one',
-      );
+      throw new ResetCodeInvalid();
     }
 
     let email: string;
     try {
       ({ email } = await this.passwordResetTokenService.consume(dto.token));
     } catch {
-      throwAuthBadRequest(
-        AuthErrorCode.resetCodeInvalid,
-        'Reset code expired or already used — request a new one',
-      );
+      throw new ResetCodeInvalid();
     }
 
     const user = toAuthUserView(await this.userClient.findUserByEmail(email));
@@ -97,10 +91,7 @@ export class PasswordResetService {
 
     if (user.twoFactorEnabled) {
       if (!args.twoFactorCode?.trim()) {
-        throwAuthBadRequest(
-          AuthErrorCode.passwordChangeRejected,
-          'Current credentials were not confirmed',
-        );
+        throw new PasswordChangeRejected();
       }
       try {
         await this.twoFactorService.verifyChallengeCode({
@@ -109,10 +100,7 @@ export class PasswordResetService {
           code: args.twoFactorCode,
         });
       } catch {
-        throwAuthBadRequest(
-          AuthErrorCode.passwordChangeRejected,
-          'Current credentials were not confirmed',
-        );
+        throw new PasswordChangeRejected();
       }
     }
 
@@ -122,10 +110,7 @@ export class PasswordResetService {
       .catch((): boolean => false);
 
     if (!passwordOk) {
-      throwAuthBadRequest(
-        AuthErrorCode.passwordChangeRejected,
-        'Current credentials were not confirmed',
-      );
+      throw new PasswordChangeRejected();
     }
 
     await this.userClient.updateUserPrivateData({

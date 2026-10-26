@@ -1,4 +1,4 @@
-import { AuthTwoFactorProto } from '@ross2p/common';
+import { AuthTwoFactorProto } from '../../generated/protos';
 import type { TwoFactorChallengeDto } from '../token/types/token.types';
 
 /**

@@ -5,12 +5,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  AuthEvent,
-  EventClientService,
-  Services,
-  NotificationCoreProto,
-} from '@ross2p/common';
+import { AuthEvent, EventClientService, Services } from '@ross2p/common';
+import { NotificationCoreProto } from '../../generated/protos';
 import type { EnableSecondFactorMethodResultType } from '@ross2p/types';
 import type { SecondFactorMethodType } from '.prisma/client-auth';
 import { TwoFactorEnrollmentService } from '../two-factor-enrollment/two-factor-enrollment.service';

@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { AuthCommonProto, AuthReauthProto } from '@ross2p/common';
+import { AuthCommonProto, AuthReauthProto } from '../../generated/protos';
 import { ReauthService } from './reauth.service';
 
 @Controller()

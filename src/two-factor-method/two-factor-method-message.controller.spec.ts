@@ -1,4 +1,4 @@
-import { AuthTwoFactorMethodProto } from '@ross2p/common';
+import { AuthTwoFactorMethodProto } from '../../generated/protos';
 import { TwoFactorMethodMessageController } from './two-factor-method-message.controller';
 
 const USER_ID = '018f0000-0000-7000-8000-000000000001';

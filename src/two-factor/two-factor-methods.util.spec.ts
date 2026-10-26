@@ -1,4 +1,4 @@
-import { AuthTwoFactorProto } from '@ross2p/common';
+import { AuthTwoFactorProto } from '../../generated/protos';
 import { buildTwoFactorChallenge } from './two-factor-methods.util';
 
 describe('buildTwoFactorChallenge (AC-10)', () => {

@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { AuthCredentialsProto } from '@ross2p/common';
+import { AuthCredentialsProto } from '../../generated/protos';
 import { CredentialsService } from './credentials.service';
 import { LoginWithContext } from './types/login-with-context.dto';
 import { RegisterWithContext } from './types/register-with-context.dto';

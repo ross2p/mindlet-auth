@@ -1,4 +1,4 @@
-import { AuthTwoFactorMethodProto } from '@ross2p/common';
+import { AuthTwoFactorMethodProto } from '../../generated/protos';
 import type { EnableSecondFactorMethodResultType } from '@ross2p/types';
 import { TwoFactorMethodEntity } from './two-factor-method.entity';
 

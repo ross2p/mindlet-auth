@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { UserCommonProto, UserCoreProto } from '@ross2p/common';
+import { UserCommonProto, UserCoreProto } from '../../generated/protos';
 import { firstValueFrom } from 'rxjs';
 import { USER_GRPC_TRANSPORT } from './user-grpc.token';
 

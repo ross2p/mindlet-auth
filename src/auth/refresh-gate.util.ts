@@ -1,6 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
 import { computePlatformAccessOpen } from '../platform-access.util';
-import { AuthErrorCode, authError } from '../auth-error';
+import { RefreshBlockedPendingChallenge } from '../auth.exceptions';
 
 export function assertRefreshAllowed(input: {
   emailVerifiedAt: Date | null;
@@ -8,11 +7,6 @@ export function assertRefreshAllowed(input: {
   twoFactorVerifiedAt: Date | null;
 }): void {
   if (!computePlatformAccessOpen(input)) {
-    throw new ForbiddenException(
-      authError(
-        AuthErrorCode.refreshBlockedPendingChallenge,
-        'Complete verification before refreshing access',
-      ),
-    );
+    throw new RefreshBlockedPendingChallenge();
   }
 }

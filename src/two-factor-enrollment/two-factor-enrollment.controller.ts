@@ -1,6 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { AuthCommonProto, AuthTwoFactorEnrollmentProto } from '@ross2p/common';
+import {
+  AuthCommonProto,
+  AuthTwoFactorEnrollmentProto,
+} from '../../generated/protos';
 import { TwoFactorEnrollmentService } from './two-factor-enrollment.service';
 
 @Controller()
