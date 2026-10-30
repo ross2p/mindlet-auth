@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GrpcOptions } from '@nestjs/microservices';
 import {
   GrpcClientService,
   USER_GRPC_LOADER_OPTIONS,
@@ -23,8 +22,8 @@ import { UserClient } from './user-client.service';
           package: USER_GRPC_PACKAGES,
           protoPath: USER_GRPC_PROTO_PATHS,
           loader: USER_GRPC_LOADER_OPTIONS,
-          url: config.get<string>('USER_GRPC_URL') ?? 'user-service:50052',
-        } satisfies Required<GrpcOptions>['options']),
+          url: config.getOrThrow<string>('USER_GRPC_URL'),
+        }),
       inject: [ConfigService],
     },
     UserCoreGrpcClient,

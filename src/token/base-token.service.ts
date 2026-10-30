@@ -17,7 +17,7 @@ export abstract class BaseTokenService<T extends Payload> {
   verifyToken(token: string): T {
     const payload = this.decodeAndVerify(token);
     this.assertTokenType(payload);
-    return payload;
+    return this.fromJwt(payload);
   }
 
   generateToken(
@@ -43,9 +43,18 @@ export abstract class BaseTokenService<T extends Payload> {
     const decoded = rawDecoded as T & { exp: number };
     return {
       token,
-      payload: decoded,
+      payload: this.fromJwt(decoded),
       expiresAt: new Date(decoded.exp * 1000),
     };
+  }
+
+  /**
+   * A JWT payload is JSON, so a `Date` put into the token comes back as an ISO string. Token
+   * services whose payload carries dates turn them back here; gRPC serializes only a `Date` into a
+   * `google.protobuf.Timestamp` and rejects a string.
+   */
+  protected fromJwt(payload: T): T {
+    return payload;
   }
 
   protected decodeAndVerify(token: string): T {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Generates this service's ts-proto types from the shared .proto contracts shipped in
 // `@ross2p/common` (dist/protos). Each service generates only the domains it talks to:
-//   node scripts/proto-generate.cjs course team user
+//   node scripts/grpc-client-generate.cjs course team user
 // Output: generated/protos (gitignored, next to the Prisma client); index.ts there is the generated barrel.
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -9,7 +9,7 @@ const path = require('node:path');
 
 const domains = process.argv.slice(2);
 if (domains.length === 0) {
-  console.error('usage: proto-generate.cjs <domain>...');
+  console.error('usage: grpc-client-generate.cjs <domain>...');
   process.exit(1);
 }
 

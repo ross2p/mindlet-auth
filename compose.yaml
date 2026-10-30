@@ -59,8 +59,6 @@ services:
       context: .
       dockerfile: Dockerfile
     hostname: auth-service
-    ports:
-      - "${BACKEND_PORT:-3002}:3000"
     env_file:
       - ./.env
     environment:

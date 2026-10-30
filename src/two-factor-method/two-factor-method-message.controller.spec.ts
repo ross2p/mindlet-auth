@@ -1,3 +1,4 @@
+import { invokeGrpcHandler } from '@ross2p/common';
 import { AuthTwoFactorMethodProto } from '../../generated/protos';
 import { TwoFactorMethodMessageController } from './two-factor-method-message.controller';
 
@@ -26,7 +27,7 @@ describe('TwoFactorMethodMessageController wiring (AC-18/19/30/31/32)', () => {
   });
 
   it('forwards begin-enable requests', async () => {
-    await controller.beginEnableTwoFactorMethod({
+    await invokeGrpcHandler(controller, 'beginEnableTwoFactorMethod', {
       userId: USER_ID,
       type: AuthTwoFactorMethodProto.SecondFactorMethodType.EMAIL_CODE,
     });
@@ -38,7 +39,7 @@ describe('TwoFactorMethodMessageController wiring (AC-18/19/30/31/32)', () => {
 
   it('forwards confirm-enable requests', async () => {
     twoFactorMethodService.confirmEnable.mockResolvedValue({});
-    await controller.confirmEnableTwoFactorMethod({
+    await invokeGrpcHandler(controller, 'confirmEnableTwoFactorMethod', {
       userId: USER_ID,
       type: AuthTwoFactorMethodProto.SecondFactorMethodType.EMAIL_CODE,
       code: '111111',
@@ -51,7 +52,7 @@ describe('TwoFactorMethodMessageController wiring (AC-18/19/30/31/32)', () => {
   });
 
   it('forwards disable requests', async () => {
-    await controller.disableTwoFactorMethod({
+    await invokeGrpcHandler(controller, 'disableTwoFactorMethod', {
       userId: USER_ID,
       type: AuthTwoFactorMethodProto.SecondFactorMethodType.EMAIL_CODE,
     });

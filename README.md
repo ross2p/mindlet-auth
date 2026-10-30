@@ -27,7 +27,7 @@ From this directory (`apps/auth`):
 ```bash
 cd apps/auth
 npm install
-npm run db:client:generate
+npm run client:generate   # Prisma client + gRPC (ts-proto) types; run after install or when .proto/schema changes
 npm run db:migrate:dev
 ```
 

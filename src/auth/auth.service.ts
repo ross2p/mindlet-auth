@@ -17,7 +17,6 @@ export class AuthService {
     private readonly sessionService: SessionService,
   ) {}
 
-  /** Mirrors the pre-gRPC behavior: any lookup failure reads as unauthorized. */
   private async findUserOrUnauthorized(userId: string): Promise<AuthUserView> {
     try {
       return toAuthUserView(await this.userClient.findUserById(userId));
@@ -74,7 +73,6 @@ export class AuthService {
     });
 
     await this.sessionService.updateLastUsedAt(payload.sessionId);
-    // OpenAPI returns access only — keep the login-issued refresh hash.
     return this.refreshAccessTokenBySessionId(payload.sessionId, {
       persistRefresh: false,
     });

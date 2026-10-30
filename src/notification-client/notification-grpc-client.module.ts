@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GrpcOptions } from '@nestjs/microservices';
 import {
   NOTIFICATION_GRPC_LOADER_OPTIONS,
   NOTIFICATION_GRPC_PACKAGES,
@@ -20,10 +19,8 @@ import { NotificationGrpcClient } from './notification-grpc.client';
           package: NOTIFICATION_GRPC_PACKAGES,
           protoPath: NOTIFICATION_GRPC_PROTO_PATHS,
           loader: NOTIFICATION_GRPC_LOADER_OPTIONS,
-          url:
-            config.get<string>('NOTIFICATION_GRPC_URL') ??
-            'notification-service:50059',
-        } satisfies Required<GrpcOptions>['options']),
+          url: config.getOrThrow<string>('NOTIFICATION_GRPC_URL'),
+        }),
       inject: [ConfigService],
     },
     NotificationGrpcClient,

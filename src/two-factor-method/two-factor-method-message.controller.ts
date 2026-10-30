@@ -5,7 +5,7 @@ import {
 } from '@ross2p/types';
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { ValidationPipe } from '@ross2p/common';
+import { GrpcRequest, ValidationPipe } from '@ross2p/common';
 import {
   AuthCommonProto,
   AuthTwoFactorMethodProto,
@@ -34,22 +34,20 @@ export class TwoFactorMethodMessageController
 
   @GrpcMethod('TwoFactorMethodService', 'beginEnableTwoFactorMethod')
   async beginEnableTwoFactorMethod(
-    data: AuthTwoFactorMethodProto.BeginEnableTwoFactorMethodRequest,
+    @GrpcRequest(new ValidationPipe(beginEnableSecondFactorMethodMessageSchema))
+    dto: AuthTwoFactorMethodProto.BeginEnableTwoFactorMethodRequest,
   ): Promise<AuthCommonProto.Empty> {
-    const dto = new ValidationPipe(
-      beginEnableSecondFactorMethodMessageSchema,
-    ).transform(data);
     await this.twoFactorMethodService.beginEnable(dto.userId, dto.type);
     return {};
   }
 
   @GrpcMethod('TwoFactorMethodService', 'confirmEnableTwoFactorMethod')
   async confirmEnableTwoFactorMethod(
-    data: AuthTwoFactorMethodProto.ConfirmEnableTwoFactorMethodRequest,
+    @GrpcRequest(
+      new ValidationPipe(confirmEnableSecondFactorMethodMessageSchema),
+    )
+    dto: AuthTwoFactorMethodProto.ConfirmEnableTwoFactorMethodRequest,
   ): Promise<AuthTwoFactorMethodProto.EnableTwoFactorMethodResult> {
-    const dto = new ValidationPipe(
-      confirmEnableSecondFactorMethodMessageSchema,
-    ).transform(data);
     const result = await this.twoFactorMethodService.confirmEnable(
       dto.userId,
       dto.type,
@@ -60,11 +58,9 @@ export class TwoFactorMethodMessageController
 
   @GrpcMethod('TwoFactorMethodService', 'disableTwoFactorMethod')
   async disableTwoFactorMethod(
-    data: AuthTwoFactorMethodProto.DisableTwoFactorMethodRequest,
+    @GrpcRequest(new ValidationPipe(disableSecondFactorMethodMessageSchema))
+    dto: AuthTwoFactorMethodProto.DisableTwoFactorMethodRequest,
   ): Promise<AuthCommonProto.Empty> {
-    const dto = new ValidationPipe(
-      disableSecondFactorMethodMessageSchema,
-    ).transform(data);
     await this.twoFactorMethodService.disable(dto.userId, dto.type);
     return {};
   }

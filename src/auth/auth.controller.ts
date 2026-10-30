@@ -4,10 +4,12 @@ import {
   AuthMessage,
   AuthenticatedUser,
   DataPayload,
+  GrpcRequest,
   ValidationPipe,
 } from '@ross2p/common';
 import { AuthCoreProto } from '../../generated/protos';
 import { refreshTokenSchema } from '@ross2p/types';
+import type { RefreshTokenType } from '@ross2p/types';
 import { AuthService } from './auth.service';
 import { AccessTokenDto } from './types/access-token.dto';
 import { accessTokenSchema } from './types/access-token.schema';
@@ -25,20 +27,17 @@ export class AuthController implements AuthCoreProto.AuthCoreServiceController {
 
   @GrpcMethod('AuthCoreService', 'validateUser')
   async validateUser(
-    data: AuthCoreProto.ValidateUserRequest,
+    @GrpcRequest(new ValidationPipe<AccessTokenDto>(accessTokenSchema))
+    { accessToken }: AccessTokenDto,
   ): Promise<AuthCoreProto.AuthenticatedUserMessage> {
-    const { accessToken } = new ValidationPipe(accessTokenSchema).transform(
-      data,
-    );
     return this.authService.validateUserByToken(accessToken);
   }
 
   @GrpcMethod('AuthCoreService', 'refreshToken')
   async refreshToken(
-    data: AuthCoreProto.RefreshTokenRequest,
+    @GrpcRequest(new ValidationPipe<RefreshTokenType>(refreshTokenSchema))
+    dto: RefreshTokenType,
   ): Promise<AuthCoreProto.TokenPayload> {
-    const dto = new ValidationPipe(refreshTokenSchema).transform(data);
-    const result = await this.authService.refreshAccessToken(dto);
-    return result;
+    return this.authService.refreshAccessToken(dto);
   }
 }

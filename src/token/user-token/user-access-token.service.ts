@@ -11,4 +11,13 @@ export class UserAccessTokenService extends BaseTokenService<UserPayloadDto> {
   constructor(jwtService: JwtService) {
     super(jwtService);
   }
+
+  protected override fromJwt(payload: UserPayloadDto): UserPayloadDto {
+    const { twoFactorVerifiedAt, emailVerifiedAt } = payload;
+    return {
+      ...payload,
+      twoFactorVerifiedAt: twoFactorVerifiedAt && new Date(twoFactorVerifiedAt),
+      emailVerifiedAt: emailVerifiedAt && new Date(emailVerifiedAt),
+    };
+  }
 }

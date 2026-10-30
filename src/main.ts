@@ -14,7 +14,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Fire-and-forget events only (e.g. `user.deleted`) — synchronous RPC moved to gRPC below.
   app.connectMicroservice<KafkaOptions>({
     transport: Transport.KAFKA,
     options: {
@@ -32,25 +31,23 @@ async function bootstrap() {
     },
   });
 
-  // Synchronous request/reply RPC (auth guard validation, login, sessions, ...).
-  // Replaces the equivalent Kafka `sendAndReturnPromise` round-trip: bounded
-  // deadline on the client side (see GrpcClientService) instead of an
-  // unbounded wait on a reply topic.
-  app.connectMicroservice<GrpcOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: AUTH_GRPC_PACKAGES,
-      protoPath: AUTH_GRPC_PROTO_PATHS,
-      loader: AUTH_GRPC_LOADER_OPTIONS,
-      url: configService.get<string>('AUTH_GRPC_URL') ?? '0.0.0.0:50051',
+  app.connectMicroservice<GrpcOptions>(
+    {
+      transport: Transport.GRPC,
+      options: {
+        package: AUTH_GRPC_PACKAGES,
+        protoPath: AUTH_GRPC_PROTO_PATHS,
+        loader: AUTH_GRPC_LOADER_OPTIONS,
+        url: configService.getOrThrow<string>('AUTH_GRPC_URL'),
+      },
     },
-  });
+    { inheritAppConfig: true },
+  );
 
   await app.startAllMicroservices();
 
-  const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port);
-  logger.log(`🚀 Application is running on port ${port}`);
+  await app.init();
+  logger.log('🚀 gRPC microservice started');
 }
 
 void bootstrap();

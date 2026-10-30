@@ -30,8 +30,10 @@ export class UserClient {
     return this.userCore.findUserById({ userId });
   }
 
-  createUser(req: UserCoreProto.CreateRequest) {
-    return this.userCore.createUser(req);
+  async createUser(req: UserCoreProto.CreateRequest) {
+    const s = await this.userCore.createUser(req);
+    console.log('createUser', s);
+    return s;
   }
 
   markEmailVerified(req: UserCoreProto.MarkEmailVerifiedRequest) {
