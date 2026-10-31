@@ -1,9 +1,8 @@
 import { NotificationGrpcClient } from '../notification-client/notification-grpc.client';
 import type { ChangePasswordType, ForgotPasswordType } from '@ross2p/types';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { AuthUserView } from '../auth/types/auth-user.view';
-import { UserClient } from '../user-client/user-client.service';
-import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
+import { UserService } from '../user-client/user-client.service';
 import { ResetPasswordDto } from './types/reset-password.dto';
 import { PasswordResetTokenService } from '../token/password-reset-token/password-reset-token.service';
 import { SessionService } from '../session/session.service';
@@ -14,26 +13,16 @@ import { PasswordChangeRejected, ResetCodeInvalid } from '../auth.exceptions';
 export class PasswordResetService {
   constructor(
     private readonly passwordResetTokenService: PasswordResetTokenService,
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
     private readonly notificationClient: NotificationGrpcClient,
     private readonly sessionService: SessionService,
     private readonly twoFactorService: TwoFactorService,
   ) {}
 
-  private async findActiveUserByEmail(
-    email: string,
-  ): Promise<AuthUserView | null> {
-    try {
-      return toAuthUserView(await this.userClient.findUserByEmail(email));
-    } catch (err) {
-      if (
-        err instanceof ForbiddenException ||
-        (err as { status?: number })?.status === 403
-      ) {
-        return null;
-      }
-      return null;
-    }
+  // AC-14: missing, soft-deleted (UserErrorCode.deleted) and any other lookup failure all look
+  // the same to the caller, so no error code needs inspecting.
+  private findActiveUserByEmail(email: string): Promise<AuthUserView | null> {
+    return this.userService.findUserByEmail(email).catch(() => null);
   }
 
   /** AC-14 — always succeeds; email only when an active User exists. */
@@ -64,9 +53,9 @@ export class PasswordResetService {
       throw new ResetCodeInvalid();
     }
 
-    const user = toAuthUserView(await this.userClient.findUserByEmail(email));
+    const user = await this.userService.findUserByEmail(email);
 
-    await this.userClient.updateUserPrivateData({
+    await this.userService.updateUserPrivateData({
       userId: user.id,
       password: newPassword,
     });
@@ -85,9 +74,7 @@ export class PasswordResetService {
     newPassword: string;
     twoFactorCode?: string | null;
   }): Promise<void> {
-    const user = toAuthUserView(
-      await this.userClient.findUserById(args.userId),
-    );
+    const user = await this.userService.findUserById(args.userId);
 
     if (user.twoFactorEnabled) {
       if (!args.twoFactorCode?.trim()) {
@@ -104,7 +91,7 @@ export class PasswordResetService {
       }
     }
 
-    const passwordOk = await this.userClient
+    const passwordOk = await this.userService
       .verifyPassword({ userId: args.userId, password: args.currentPassword })
       .then((result) => result.valid ?? false)
       .catch((): boolean => false);
@@ -113,7 +100,7 @@ export class PasswordResetService {
       throw new PasswordChangeRejected();
     }
 
-    await this.userClient.updateUserPrivateData({
+    await this.userService.updateUserPrivateData({
       userId: args.userId,
       password: args.newPassword,
     });

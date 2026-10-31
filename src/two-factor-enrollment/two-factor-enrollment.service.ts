@@ -6,16 +6,14 @@ import {
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import { NotificationCoreProto } from '../../generated/protos';
-import type { AuthUserView } from '../auth/types/auth-user.view';
-import { UserClient } from '../user-client/user-client.service';
-import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
+import { UserService } from '../user-client/user-client.service';
 import { TwoFactorEnrollmentRepository } from './two-factor-enrollment.repository';
 
 @Injectable()
 export class TwoFactorEnrollmentService {
   constructor(
     private readonly enrollmentRepository: TwoFactorEnrollmentRepository,
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
     private readonly notificationClient: NotificationGrpcClient,
   ) {}
 
@@ -59,12 +57,8 @@ export class TwoFactorEnrollmentService {
     await this.enrollmentRepository.deleteByUserId(userId);
   }
 
-  private async loadUser(userId: string): Promise<AuthUserView> {
-    return toAuthUserView(await this.userClient.findUserById(userId));
-  }
-
   async beginEnable(userId: string): Promise<void> {
-    const user = await this.loadUser(userId);
+    const user = await this.userService.findUserById(userId);
     if (user.twoFactorEnabled) {
       throw new BadRequestException(
         'Two-factor authentication is already enabled for this account.',
@@ -79,7 +73,7 @@ export class TwoFactorEnrollmentService {
   }
 
   async confirmEnable(userId: string, code: string): Promise<void> {
-    const user = await this.loadUser(userId);
+    const user = await this.userService.findUserById(userId);
     if (user.twoFactorEnabled) {
       throw new BadRequestException(
         'Two-factor authentication is already enabled for this account.',
@@ -87,18 +81,18 @@ export class TwoFactorEnrollmentService {
     }
 
     await this.verifyChallenge(userId, code);
-    await this.userClient.setTwoFactorEnabled({ userId, enabled: true });
+    await this.userService.setTwoFactorEnabled({ userId, enabled: true });
   }
 
   async disable(userId: string, password: string): Promise<void> {
-    const user = await this.loadUser(userId);
+    const user = await this.userService.findUserById(userId);
     if (!user.twoFactorEnabled) {
       throw new BadRequestException(
         'Two-factor authentication is not enabled for this account.',
       );
     }
 
-    const ok = await this.userClient
+    const ok = await this.userService
       .verifyPassword({ userId, password })
       .then((result) => result.valid ?? false)
       .catch((): boolean => false);
@@ -107,7 +101,7 @@ export class TwoFactorEnrollmentService {
       throw new BadRequestException('Invalid password');
     }
 
-    await this.userClient.setTwoFactorEnabled({ userId, enabled: false });
+    await this.userService.setTwoFactorEnabled({ userId, enabled: false });
     await this.enrollmentRepository.deleteByUserId(userId);
   }
 }

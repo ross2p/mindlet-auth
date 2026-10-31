@@ -8,7 +8,7 @@ import { SESSION_REFRESH_TTL_MS } from '../auth-challenge.constants';
 import { CredentialsService } from './credentials.service';
 
 describe('CredentialsService login (AC-07/08/10)', () => {
-  const userClient = {
+  const userService = {
     findUserByEmail: jest.fn(),
     verifyPassword: jest.fn(),
   };
@@ -32,7 +32,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new CredentialsService(
-      userClient as never,
+      userService as never,
       authService as never,
       twoFactorService as never,
       sessionService as never,
@@ -41,7 +41,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   });
 
   it('returns twoFactorChallenge and closed platform access when 2FA is on', async () => {
-    userClient.findUserByEmail.mockResolvedValueOnce({
+    userService.findUserByEmail.mockResolvedValueOnce({
       id: 'u1',
       email: 'user-a1b2@example.test',
       firstName: 'T',
@@ -58,7 +58,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    userClient.verifyPassword.mockResolvedValueOnce({ valid: true });
+    userService.verifyPassword.mockResolvedValueOnce({ valid: true });
 
     const result = await service.emailLogin({
       email: 'user-a1b2@example.test',
@@ -80,7 +80,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   });
 
   it('maps miss, bad password, and soft-delete to 401 auth.sign_in_unavailable (AC-08)', async () => {
-    userClient.findUserByEmail.mockRejectedValue(
+    userService.findUserByEmail.mockRejectedValue(
       new NotFoundException('User Not Found'),
     );
 
@@ -101,7 +101,7 @@ describe('CredentialsService login (AC-07/08/10)', () => {
   });
 
   it('maps soft-deleted user Forbidden to sign-in unavailable (AC-08)', async () => {
-    userClient.findUserByEmail.mockRejectedValue(
+    userService.findUserByEmail.mockRejectedValue(
       new ForbiddenException('Sign-in is unavailable for these credentials'),
     );
 

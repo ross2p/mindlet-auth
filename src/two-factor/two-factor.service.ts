@@ -8,8 +8,7 @@ import { TwoFactorRepository } from './two-factor.repository';
 import { AuthService } from '../auth/auth.service';
 import { SessionService } from '../session/session.service';
 import type { AuthUserView } from '../auth/types/auth-user.view';
-import { UserClient } from '../user-client/user-client.service';
-import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
+import { UserService } from '../user-client/user-client.service';
 import { isTwoFactorAttemptsExceeded } from '../auth-challenge.constants';
 import {
   TwoFactorAlreadyVerified,
@@ -28,17 +27,13 @@ export class TwoFactorService {
     private readonly twoFactorRepository: TwoFactorRepository,
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
     private readonly notificationClient: NotificationGrpcClient,
     private readonly sessionService: SessionService,
   ) {}
 
   private generateCode(): string {
     return randomInt(0, 1_000_000).toString().padStart(6, '0');
-  }
-
-  private async loadUser(userId: string): Promise<AuthUserView> {
-    return toAuthUserView(await this.userClient.findUserById(userId));
   }
 
   private async createTwoFactorCode(
@@ -66,7 +61,7 @@ export class TwoFactorService {
       throw new TwoFactorAlreadyVerified();
     }
 
-    const user = await this.loadUser(session.userId);
+    const user = await this.userService.findUserById(session.userId);
     if (!user.twoFactorEnabled) {
       throw new TwoFactorNotEnabled();
     }
@@ -78,7 +73,7 @@ export class TwoFactorService {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       args.sessionId,
     );
-    const user = await this.loadUser(session.userId);
+    const user = await this.userService.findUserById(session.userId);
     if (!user.twoFactorEnabled) {
       throw new TwoFactorNotEnabled();
     }
@@ -96,7 +91,7 @@ export class TwoFactorService {
     method?: VerifyTwoFactorCodeType['method'];
   }): Promise<void> {
     if (args.method) {
-      const user = await this.loadUser(args.userId);
+      const user = await this.userService.findUserById(args.userId);
       const challenge = buildTwoFactorChallenge({
         twoFactorEnabled: user.twoFactorEnabled,
       });
@@ -159,7 +154,7 @@ export class TwoFactorService {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       args.sessionId,
     );
-    const fullUser = await this.loadUser(args.userId);
+    const fullUser = await this.userService.findUserById(args.userId);
     const challenge = buildTwoFactorChallenge({
       twoFactorEnabled: fullUser.twoFactorEnabled,
     });

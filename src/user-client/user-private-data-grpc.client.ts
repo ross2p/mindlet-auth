@@ -2,7 +2,7 @@ import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { UserPrivateDataProto } from '../../generated/protos';
 import { firstValueFrom } from 'rxjs';
-import { USER_GRPC_TRANSPORT } from './user-grpc.token';
+import { USER_GRPC_TRANSPORT } from './user-grpc.constants';
 
 @Injectable()
 export class UserPrivateDataGrpcClient implements OnModuleInit {

@@ -2,7 +2,7 @@ import { ConflictException, BadRequestException } from '@nestjs/common';
 import { EmailVerificationService } from './email-verification.service';
 
 describe('EmailVerificationService (AC-01/04/05/06)', () => {
-  const userClient = {
+  const userService = {
     findUserById: jest.fn(),
     markEmailVerified: jest.fn(),
   };
@@ -37,7 +37,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new EmailVerificationService(
-      userClient as never,
+      userService as never,
       notificationClient as never,
       emailVerificationRepository as never,
       authService as never,
@@ -50,7 +50,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       id: 's1',
       userId: 'u1',
     });
-    userClient.findUserById.mockResolvedValue({
+    userService.findUserById.mockResolvedValue({
       id: 'u1',
       email: 'user-a1b2@example.test',
       emailVerifiedAt: null,
@@ -78,7 +78,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       id: 's1',
       userId: 'u1',
     });
-    userClient.findUserById.mockResolvedValue({
+    userService.findUserById.mockResolvedValue({
       id: 'u1',
       email: 'user-a1b2@example.test',
       emailVerifiedAt: null,
@@ -97,7 +97,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
       id: 's1',
       userId: 'u1',
     });
-    userClient.findUserById.mockResolvedValue({
+    userService.findUserById.mockResolvedValue({
       id: 'u1',
       emailVerifiedAt: new Date(),
     });
@@ -108,7 +108,7 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
   });
 
   it('rejects invalid verification code (AC-05)', async () => {
-    userClient.findUserById.mockResolvedValue({
+    userService.findUserById.mockResolvedValue({
       id: 'u1',
       emailVerifiedAt: null,
     });
@@ -128,11 +128,11 @@ describe('EmailVerificationService (AC-01/04/05/06)', () => {
   });
 
   it('marks verified and refreshes tokens on valid code (AC-04)', async () => {
-    userClient.findUserById.mockResolvedValueOnce({
+    userService.findUserById.mockResolvedValueOnce({
       id: 'u1',
       emailVerifiedAt: null,
     });
-    userClient.markEmailVerified.mockResolvedValueOnce({});
+    userService.markEmailVerified.mockResolvedValueOnce({});
     emailVerificationRepository.findEmailVerificationCodeByUserId.mockResolvedValue(
       { code: '123456', id: 'ev-1', attempts: 0 },
     );

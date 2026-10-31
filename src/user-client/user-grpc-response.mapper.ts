@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { UserCoreProto } from '../../generated/protos';
 import type { AuthUserView } from '../auth/types/auth-user.view';
 
@@ -8,10 +9,13 @@ import type { AuthUserView } from '../auth/types/auth-user.view';
  * one guarantee TS can't express structurally; every other field already
  * matches AuthUserView exactly (both `T | null`, no `| undefined`).
  */
-export function toAuthUserView(record: UserCoreProto.UserRecord): AuthUserView {
-  return {
-    ...record,
-    createdAt: record.createdAt!,
-    updatedAt: record.updatedAt!,
-  };
+@Injectable()
+export class UserGrpcResponseMapper {
+  public toAuthUserView(record: UserCoreProto.UserRecord): AuthUserView {
+    return {
+      ...record,
+      createdAt: record.createdAt!,
+      updatedAt: record.updatedAt!,
+    };
+  }
 }

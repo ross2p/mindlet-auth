@@ -1,16 +1,15 @@
 import type { UserTokensDto } from '../token/types/token.types';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
+import { UserErrorCode } from '@ross2p/types';
 import { AuthService } from '../auth/auth.service';
 import { TwoFactorService } from '../two-factor/two-factor.service';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionService } from '../session/session.service';
 import { SessionProvider } from '../session/session-provider.enum';
 import type { AuthUserView } from '../auth/types/auth-user.view';
-import { UserClient } from '../user-client/user-client.service';
-import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
+import { UserService } from '../user-client/user-client.service';
 import type { LoginWithContext } from './types/login-with-context.dto';
 import type { RegisterWithContext } from './types/register-with-context.dto';
-import { mapAuthUserViewToAuthUserDto } from './map-auth-user-to-dto';
 import { computePlatformAccessOpen } from '../platform-access.util';
 import { buildTwoFactorChallenge } from '../two-factor/two-factor-methods.util';
 import { sessionExpiresAt } from '../auth-challenge.constants';
@@ -19,7 +18,7 @@ import { SignInUnavailable } from '../auth.exceptions';
 @Injectable()
 export class CredentialsService {
   constructor(
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
     private readonly authService: AuthService,
     private readonly twoFactorService: TwoFactorService,
     private readonly sessionService: SessionService,
@@ -28,12 +27,11 @@ export class CredentialsService {
 
   private async loadUserByEmail(email: string): Promise<AuthUserView | null> {
     try {
-      return toAuthUserView(await this.userClient.findUserByEmail(email));
+      return await this.userService.findUserByEmail(email);
     } catch (err) {
       if (
-        err instanceof ForbiddenException ||
-        (err as { status?: number })?.status === 403 ||
-        String((err as Error)?.message ?? '').includes('unavailable')
+        err instanceof HttpException &&
+        (err.getResponse() as { code?: string }).code === UserErrorCode.deleted
       ) {
         throw new SignInUnavailable();
       }
@@ -48,7 +46,7 @@ export class CredentialsService {
       throw new SignInUnavailable();
     }
 
-    const isPasswordValid: boolean = await this.userClient
+    const isPasswordValid: boolean = await this.userService
       .verifyPassword({ userId: user.id, password: command.password })
       .then((result) => result.valid ?? false)
       .catch((): boolean => false);
@@ -82,7 +80,7 @@ export class CredentialsService {
     });
 
     return {
-      user: mapAuthUserViewToAuthUserDto(user),
+      user: user,
       is2faEnabled: user.twoFactorEnabled,
       sessionId: session.id,
       platformAccessOpen: computePlatformAccessOpen({
@@ -97,16 +95,7 @@ export class CredentialsService {
   }
 
   async emailRegister(command: RegisterWithContext): Promise<UserTokensDto> {
-    const user = toAuthUserView(
-      await this.userClient.createUser({
-        email: command.email,
-        firstName: command.firstName,
-        lastName: command.lastName,
-        password: command.password,
-        avatarUrl: command.avatarUrl,
-        phoneNumber: command.phoneNumber,
-      }),
-    );
+    const user = await this.userService.createUser(command);
 
     const now = new Date();
     const session = await this.sessionService.createSession({
@@ -128,7 +117,7 @@ export class CredentialsService {
     });
 
     return {
-      user: mapAuthUserViewToAuthUserDto(user),
+      user,
       is2faEnabled: user.twoFactorEnabled,
       sessionId: session.id,
       platformAccessOpen: computePlatformAccessOpen({

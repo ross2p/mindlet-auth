@@ -6,7 +6,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     create: jest.fn(),
     consume: jest.fn(),
   };
-  const userClient = {
+  const userService = {
     findUserByEmail: jest.fn(),
     findUserById: jest.fn(),
     updateUserPrivateData: jest.fn(),
@@ -28,7 +28,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     jest.clearAllMocks();
     service = new PasswordResetService(
       passwordResetTokenService as never,
-      userClient as never,
+      userService as never,
       notificationClient as never,
       sessionService as never,
       twoFactorService as never,
@@ -37,7 +37,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
 
   describe('forgotPassword (AC-14)', () => {
     it('returns without leaking when user is missing', async () => {
-      userClient.findUserByEmail.mockRejectedValue(new Error('not found'));
+      userService.findUserByEmail.mockRejectedValue(new Error('not found'));
 
       await expect(
         service.forgotPassword({ email: 'missing@example.test' }),
@@ -48,7 +48,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
 
     it('returns without leaking when user is soft-deleted', async () => {
-      userClient.findUserByEmail.mockRejectedValue(
+      userService.findUserByEmail.mockRejectedValue(
         new ForbiddenException('Sign-in is unavailable for these credentials'),
       );
 
@@ -60,7 +60,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
 
     it('creates token and notifies when user exists', async () => {
-      userClient.findUserByEmail.mockResolvedValue({
+      userService.findUserByEmail.mockResolvedValue({
         id: 'u1',
         email: 'user@example.test',
       });
@@ -81,7 +81,7 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
 
     it('fails closed when notification is down for a known user', async () => {
-      userClient.findUserByEmail.mockResolvedValue({
+      userService.findUserByEmail.mockResolvedValue({
         id: 'u1',
         email: 'user@example.test',
       });
@@ -118,18 +118,18 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       passwordResetTokenService.consume.mockResolvedValue({
         email: 'user@example.test',
       });
-      userClient.findUserByEmail.mockResolvedValueOnce({
+      userService.findUserByEmail.mockResolvedValueOnce({
         id: 'u1',
         email: 'user@example.test',
       });
-      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
+      userService.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await service.resetPassword({
         token: 'good',
         newPassword: 'Passw0rd2',
       });
 
-      expect(userClient.updateUserPrivateData).toHaveBeenCalledWith({
+      expect(userService.updateUserPrivateData).toHaveBeenCalledWith({
         userId: 'u1',
         password: 'Passw0rd2',
       });
@@ -142,11 +142,11 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
 
   describe('changePassword (AC-14/15)', () => {
     it('rejects when current password is wrong, changing nothing and revoking nothing (AC-15)', async () => {
-      userClient.findUserById.mockResolvedValueOnce({
+      userService.findUserById.mockResolvedValueOnce({
         id: 'u1',
         twoFactorEnabled: false,
       });
-      userClient.verifyPassword.mockResolvedValueOnce({ valid: false });
+      userService.verifyPassword.mockResolvedValueOnce({ valid: false });
 
       await expect(
         service.changePassword({
@@ -158,11 +158,11 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
 
       expect(sessionService.signOutAll).not.toHaveBeenCalled();
-      expect(userClient.updateUserPrivateData).not.toHaveBeenCalled();
+      expect(userService.updateUserPrivateData).not.toHaveBeenCalled();
     });
 
     it('requires 2FA code when enabled', async () => {
-      userClient.findUserById.mockResolvedValueOnce({
+      userService.findUserById.mockResolvedValueOnce({
         id: 'u1',
         twoFactorEnabled: true,
       });
@@ -178,12 +178,12 @@ describe('PasswordResetService (AC-13/14/15/17)', () => {
     });
 
     it('updates password and revokes all sessions', async () => {
-      userClient.findUserById.mockResolvedValueOnce({
+      userService.findUserById.mockResolvedValueOnce({
         id: 'u1',
         twoFactorEnabled: false,
       });
-      userClient.verifyPassword.mockResolvedValueOnce({ valid: true });
-      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
+      userService.verifyPassword.mockResolvedValueOnce({ valid: true });
+      userService.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await service.changePassword({
         userId: 'u1',

@@ -4,8 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthenticatedUser } from '@ross2p/common';
 import { SessionService } from '../session/session.service';
 import { UserTokenService } from '../token/user-token/user-token.service';
-import { UserClient } from '../user-client/user-client.service';
-import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
+import { UserService } from '../user-client/user-client.service';
 import type { AuthUserView } from './types/auth-user.view';
 import { assertRefreshAllowed } from './refresh-gate.util';
 
@@ -13,16 +12,14 @@ import { assertRefreshAllowed } from './refresh-gate.util';
 export class AuthService {
   constructor(
     private readonly userTokenService: UserTokenService,
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
     private readonly sessionService: SessionService,
   ) {}
 
   private async findUserOrUnauthorized(userId: string): Promise<AuthUserView> {
-    try {
-      return toAuthUserView(await this.userClient.findUserById(userId));
-    } catch {
+    return await this.userService.findUserById(userId).catch(() => {
       throw new UnauthorizedException('User not found');
-    }
+    });
   }
 
   async validateUserByToken(token: string): Promise<AuthenticatedUser> {

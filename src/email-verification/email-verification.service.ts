@@ -10,13 +10,12 @@ import type { TokenPayloadDto } from '../token/types/token.types';
 import { EmailVerificationRepository } from './email-verification.repository';
 import { AuthService } from '../auth/auth.service';
 import { SessionService } from '../session/session.service';
-import { UserClient } from '../user-client/user-client.service';
-import { toAuthUserView } from '../user-client/user-grpc-response.mapper';
+import { UserService } from '../user-client/user-client.service';
 
 @Injectable()
 export class EmailVerificationService {
   constructor(
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
     private readonly notificationClient: NotificationGrpcClient,
     private readonly emailVerificationRepository: EmailVerificationRepository,
     private readonly authService: AuthService,
@@ -31,9 +30,7 @@ export class EmailVerificationService {
     const session = await this.sessionService.findActiveSessionByIdOrThrow(
       args.sessionId,
     );
-    const user = toAuthUserView(
-      await this.userClient.findUserById(session.userId),
-    );
+    const user = await this.userService.findUserById(session.userId);
 
     if (user.emailVerifiedAt != null) {
       throw new ConflictException('Email is already verified');
@@ -58,9 +55,7 @@ export class EmailVerificationService {
     email: string;
     code: string;
   }): Promise<TokenPayloadDto> {
-    const user = toAuthUserView(
-      await this.userClient.findUserById(args.userId),
-    );
+    const user = await this.userService.findUserById(args.userId);
 
     if (user.emailVerifiedAt != null) {
       throw new ConflictException('Email is already verified');
@@ -79,7 +74,7 @@ export class EmailVerificationService {
     await this.emailVerificationRepository.deleteEmailVerificationCode(
       args.userId,
     );
-    await this.userClient.markEmailVerified({
+    await this.userService.markEmailVerified({
       userId: args.userId,
       email: args.email,
     });

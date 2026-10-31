@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
-import { UserClient } from '../user-client/user-client.service';
+import { UserService } from '../user-client/user-client.service';
 import { REAUTH_TTL_SECONDS } from './reauth.constants';
 
 /**
@@ -12,14 +12,14 @@ import { REAUTH_TTL_SECONDS } from './reauth.constants';
 export class ReauthService {
   constructor(
     private readonly cache: CacheService,
-    private readonly userClient: UserClient,
+    private readonly userService: UserService,
   ) {}
 
   public async verifyPassword(
     userId: string,
     password: string,
   ): Promise<boolean> {
-    const isValid = await this.userClient
+    const isValid = await this.userService
       .verifyPassword({ userId, password })
       .then((result) => result.valid ?? false)
       .catch((): boolean => false);

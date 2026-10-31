@@ -7,6 +7,7 @@ import {
 import { UserCoreGrpcClient } from './user-core-grpc.client';
 import { UserPasswordGrpcClient } from './user-password-grpc.client';
 import { UserPrivateDataGrpcClient } from './user-private-data-grpc.client';
+import { UserGrpcResponseMapper } from './user-grpc-response.mapper';
 
 /**
  * The single facade every auth class injects for the user service. Every
@@ -15,25 +16,28 @@ import { UserPrivateDataGrpcClient } from './user-private-data-grpc.client';
  * at the call site, mirroring gateway-web's AuthClient/auth-response.mapper.ts).
  */
 @Injectable()
-export class UserClient {
+export class UserService {
   constructor(
     private readonly userCore: UserCoreGrpcClient,
     private readonly userPassword: UserPasswordGrpcClient,
     private readonly userPrivateData: UserPrivateDataGrpcClient,
+    private readonly userMapper: UserGrpcResponseMapper,
   ) {}
 
-  findUserByEmail(email: string) {
-    return this.userCore.findUserByEmail({ email });
+  async findUserByEmail(email: string) {
+    return this.userMapper.toAuthUserView(
+      await this.userCore.findUserByEmail({ email }),
+    );
   }
 
-  findUserById(userId: string) {
-    return this.userCore.findUserById({ userId });
+  async findUserById(userId: string) {
+    return this.userMapper.toAuthUserView(
+      await this.userCore.findUserById({ userId }),
+    );
   }
 
   async createUser(req: UserCoreProto.CreateRequest) {
-    const s = await this.userCore.createUser(req);
-    console.log('createUser', s);
-    return s;
+    return this.userMapper.toAuthUserView(await this.userCore.createUser(req));
   }
 
   markEmailVerified(req: UserCoreProto.MarkEmailVerifiedRequest) {

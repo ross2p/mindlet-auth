@@ -6,7 +6,7 @@ describe('ReauthService (AC-14/16/18/19/23)', () => {
     get: jest.fn(),
     delete: jest.fn(),
   };
-  const userClient = {
+  const userService = {
     verifyPassword: jest.fn(),
   };
 
@@ -14,11 +14,11 @@ describe('ReauthService (AC-14/16/18/19/23)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ReauthService(cache as never, userClient as never);
+    service = new ReauthService(cache as never, userService as never);
   });
 
   it('sets a marker on correct credentials', async () => {
-    userClient.verifyPassword.mockResolvedValue({ valid: true });
+    userService.verifyPassword.mockResolvedValue({ valid: true });
 
     const result = await service.verifyPassword(
       '018f0000-0000-7000-8000-000000000001',
@@ -34,7 +34,7 @@ describe('ReauthService (AC-14/16/18/19/23)', () => {
   });
 
   it('does not set a marker on incorrect credentials', async () => {
-    userClient.verifyPassword.mockResolvedValue({ valid: false });
+    userService.verifyPassword.mockResolvedValue({ valid: false });
 
     const result = await service.verifyPassword(
       '018f0000-0000-7000-8000-000000000001',

@@ -126,7 +126,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       create: jest.fn(),
       consume: jest.fn(),
     };
-    const userClient = {
+    const userService = {
       findUserByEmail: jest.fn(),
       findUserById: jest.fn(),
       updateUserPrivateData: jest.fn(),
@@ -148,7 +148,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       jest.clearAllMocks();
       resetService = new PasswordResetService(
         passwordResetTokenService as never,
-        userClient as never,
+        userService as never,
         notificationClient as never,
         sessionService as never,
         twoFactorService as never,
@@ -156,7 +156,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
     });
 
     it('AC-14 — forgot succeeds identically for missing users', async () => {
-      userClient.findUserByEmail.mockRejectedValue(new Error('missing'));
+      userService.findUserByEmail.mockRejectedValue(new Error('missing'));
       await expect(
         resetService.forgotPassword({ email: 'missing@example.test' }),
       ).resolves.toBeUndefined();
@@ -167,11 +167,11 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
       passwordResetTokenService.consume.mockResolvedValue({
         email: 'user-a1b2@example.test',
       });
-      userClient.findUserByEmail.mockResolvedValueOnce({
+      userService.findUserByEmail.mockResolvedValueOnce({
         id: 'u1',
         email: 'user-a1b2@example.test',
       });
-      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
+      userService.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await resetService.resetPassword({
         token: 'tok',
@@ -185,12 +185,12 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
     });
 
     it('AC-17 — change password revokes all sessions', async () => {
-      userClient.findUserById.mockResolvedValueOnce({
+      userService.findUserById.mockResolvedValueOnce({
         id: 'u1',
         twoFactorEnabled: false,
       });
-      userClient.verifyPassword.mockResolvedValueOnce({ valid: true });
-      userClient.updateUserPrivateData.mockResolvedValueOnce(undefined);
+      userService.verifyPassword.mockResolvedValueOnce({ valid: true });
+      userService.updateUserPrivateData.mockResolvedValueOnce(undefined);
 
       await resetService.changePassword({
         userId: 'u1',
@@ -236,7 +236,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
 
   describe('AC-08 — soft-delete denied at login', () => {
     it('maps Forbidden from user identity to sign-in unavailable', async () => {
-      const userClient = {
+      const userService = {
         findUserByEmail: jest
           .fn()
           .mockRejectedValue(
@@ -247,7 +247,7 @@ describe('Auth AC matrix (unit / mocked integration)', () => {
         verifyPassword: jest.fn(),
       };
       const credentials = new CredentialsService(
-        userClient as never,
+        userService as never,
         { generateTokens: jest.fn() } as never,
         { sendCode: jest.fn() } as never,
         { createSession: jest.fn() } as never,
